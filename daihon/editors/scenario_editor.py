@@ -4,6 +4,7 @@ import tkinter as tk
 from enum import Enum, auto
 from pathlib import Path
 from tkinter import ttk, font, messagebox, filedialog
+from importlib.resources import open_text, path as resource_path
 #from tkfontchooser import askfont
 
 from .character_editor import CharacterEditor
@@ -236,7 +237,7 @@ class ScenarioEditor(tk.Toplevel):
 		menubar.add_cascade(menu = font_menu, label = '字型')
 	def _extract_menu(self, menu_file):
 		extract_file = tk.Menu(menu_file)
-		with open(resource('templates.json'), encoding = 'utf-8') as file:
+		with open_text('templates', 'templates.json') as file:
 			#After Py 3.7 dict preserves the order
 			self._templates = json.load(file)
 		for i, tname in enumerate(self._templates, 1):
@@ -258,8 +259,9 @@ class ScenarioEditor(tk.Toplevel):
 		info = self._templates[tname]
 		print(info)
 		if not hasattr(self, f'_extract_env_{tname}'):
-			setattr(self, f'_extract_env_{tname}', Environment(loader = FileSystemLoader(str(resource('.'))), extensions = [i18n, do, loopcontrols, with_], **info['env_param']))
-		template = getattr(self, f'_extract_env_{tname}').get_template(info['filename'])
+			path = str(resource_path('templates', '.'))
+			setattr(self, f'_extract_env_{tname}', Environment(loader = FileSystemLoader(path), extensions = [i18n, do, loopcontrols, with_], **info['env_param']))
+		template = getattr(self, f'_extract_env_{tname}').get_template(resource_path('templates', info['filename']))
 		with open(f'{Path(self._filename).stem}.{info["suffix"]}', 'w', encoding = 'utf-8') as file:
 			file.write(template.render({'scenario': self._scenario}))
 	def _extract_with_docxtpl(self, tname):
@@ -269,7 +271,7 @@ class ScenarioEditor(tk.Toplevel):
 		info = self._templates[tname]
 		if not hasattr(self, f'_extract_env_{tname}'):
 			setattr(self, f'_extract_env_{tname}', Environment(extensions = [i18n, do, loopcontrols, with_], **info['env_param']))
-		doctemplate = DocxTemplate(resource(info['filename']))
+		doctemplate = DocxTemplate(resource_path('templates', info['filename']))
 		doctemplate.render({'scenario': self._scenario}, getattr(self, f'_extract_env_{tname}'))
 		doctemplate.save(f'{Path(self._filename).stem}.{info["suffix"]}')
 
