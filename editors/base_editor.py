@@ -1,7 +1,8 @@
-from abstract_classes import ScenarioBase
 from collections import namedtuple
 from copy import copy
 import tkinter as tk
+
+from ..scenario.base import ScenarioBase
 
 EditorEvent = namedtuple('EditorEvent', ('description', 'action', 'key', 'before', 'after'))
 

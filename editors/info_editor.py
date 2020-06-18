@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext
-from abstract_classes import ScenarioWithCharacters, ScenarioWithDialogue
-from base_editor import BaseEditor, EditorEvent
+
+from .base_editor import BaseEditor, EditorEvent
+
+from ..scenario.base import ScenarioWithCharacters, ScenarioWithDialogue
 
 class InfoEditor(BaseEditor):
 	defaultinfo = {'index': '', 'date': '', 'image': '', 'imagelist': ''}

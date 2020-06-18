@@ -1,7 +1,3 @@
-from character_editor import CharacterEditor
-from dialogue_editor import DialogueEditor
-from info_editor import InfoEditor
-from scenario import Scenario
 import json
 import sys
 import tkinter as tk
@@ -9,6 +5,12 @@ from enum import Enum, auto
 from pathlib import Path
 from tkinter import ttk, font, messagebox, filedialog
 #from tkfontchooser import askfont
+
+from .character_editor import CharacterEditor
+from .dialogue_editor import DialogueEditor
+from .info_editor import InfoEditor
+
+from ..scenario.scenario import Scenario
 
 #TODO: <del>messagebox and filedialog do not block</del>
 #use <del>grab_set and wait_window</del> parent

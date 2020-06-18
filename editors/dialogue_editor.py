@@ -1,9 +1,11 @@
 import tkinter as tk
 import re
 from tkinter import ttk, messagebox, simpledialog, scrolledtext
-from abstract_classes import ScenarioWithCharacters, ScenarioWithDialogue
-from base_editor import BaseEditor, EditorEvent
-from image_process_widget import ImageProcessFrame
+
+from .base_editor import BaseEditor, EditorEvent
+
+from ..scenario.base import ScenarioWithCharacters, ScenarioWithDialogue
+from ..imageprocess.image_process_widget import ImageProcessFrame
 
 delimiter = '：'
 re_delimiter = re.compile('：|:')

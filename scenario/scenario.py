@@ -1,14 +1,16 @@
 from __future__ import annotations
-from abstract_classes import ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue
 from collections import defaultdict
 from io import IOBase
 from itertools import takewhile, dropwhile
 from typing import Optional, Dict, Tuple, Callable, Mapping, MutableMapping
 from warnings import warn
-import toolbox
 import json
 import random
 import string
+
+from .base import ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue
+
+from ..utils import toolbox
 
 class Sentence():
 	def __init__(self, text, info):

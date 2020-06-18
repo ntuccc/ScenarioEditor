@@ -2,9 +2,11 @@ import tkinter as tk
 from os import getcwd
 from pathlib import Path
 from tkinter import ttk, simpledialog, filedialog, messagebox, scrolledtext
-from fast_shot import FastShot
-from image_process import ImageProcess
-import toolbox
+
+from .fast_shot import FastShot
+from .image_process import ImageProcess
+
+from ..utils import toolbox
 
 class ImageProcessFrame(tk.Frame):
 	def __init__(self, *args, **kwargs):

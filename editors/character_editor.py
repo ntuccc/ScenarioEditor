@@ -4,11 +4,13 @@ from itertools import count
 from tkinter import colorchooser, ttk
 from typing import Optional
 from warnings import warn
-from _data_structure import _listnode, _linkedlist
-from new_character_dialog import NewCharacterFrame
-from abstract_classes import ScenarioWithCharacters
-from base_editor import BaseEditor, EditorEvent
-from scrollableframe import VerticalScrolledFrame
+
+from .new_character_dialog import NewCharacterFrame
+from .base_editor import BaseEditor, EditorEvent
+
+from ..ast.linkedlist import listnode, linkedlist
+from ..scenario.base import ScenarioWithCharacters
+from ..utils.scrollableframe import VerticalScrolledFrame
 
 defaultcolor = '#ff0000'
 
@@ -24,7 +26,7 @@ class CharacterFrame(tk.Frame):
 		super().__init__(*args, **kwargs, class_ = 'CharacterFrame')
 		self._editor = self._grab_editor()
 
-		self.listnode: Optional[_listnode[CharacterFrame]] = None
+		self.listnode: Optional[listnode[CharacterFrame]] = None
 		self._character_info = None
 		self._tmpname: Optional[str] = None
 
@@ -161,7 +163,7 @@ class CharacterEditor(BaseEditor, VerticalScrolledFrame):
 	def __init__(self, master, *args, **kwargs):
 		BaseEditor.__init__(self, master, *args, **kwargs, class_ = 'CharacterEditor')
 		VerticalScrolledFrame.__init__(self, master, *args, **kwargs, class_ = 'CharacterEditor')
-		self._charaframes_list: _linkedlist[CharacterFrame] = _linkedlist()
+		self._charaframes_list: linkedlist[CharacterFrame] = linkedlist()
 
 		self._listframe = tk.Frame(self.interior)
 		self._listframe.pack()
@@ -277,7 +279,7 @@ class CharacterEditor(BaseEditor, VerticalScrolledFrame):
 	def _add_chara_tail(self, name, character_info) -> CharacterFrame:
 		newframe = CharacterFrame(master = self._listframe, name = name, character_info = character_info)
 		#newframe.name = name
-		newnode = _listnode(value = newframe)
+		newnode = listnode(value = newframe)
 		newframe.listnode = newnode
 		self._charaframes_list.append_tail(newnode)
 		newframe.pack()

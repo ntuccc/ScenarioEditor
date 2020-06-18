@@ -5,9 +5,10 @@ from itertools import count
 from pathlib import Path
 from PIL import Image, ImageTk
 from time import sleep
-from tkapp import AppBase
 from tkinter import filedialog, messagebox
 from typing import Tuple
+
+from .tkapp import AppBase
 
 class FastShot(tk.Frame):
 	_counter = None
