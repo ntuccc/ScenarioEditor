@@ -1,0 +1,42 @@
+{
+	"template": {
+		"filename": "template.tex",
+		"suffix": "tex",
+		"renderer": "jinja2",
+		"env_param": {
+			"block_start_string": "%{%",
+			"variable_start_string": "%{{",
+			"comment_start_string": "%{#"
+		}
+	},
+	"template2": {
+		"filename": "template2.tex",
+		"suffix": "tex",
+		"renderer": "jinja2",
+		"env_param": {
+			"block_start_string": "%{%",
+			"variable_start_string": "%{{",
+			"comment_start_string": "%{#"
+		}
+	},
+	"template3": {
+		"filename": "template3.docx",
+		"suffix": "docx",
+		"renderer": "docxtpl",
+		"env_param": {
+			"block_start_string": "{%",
+			"variable_start_string": "{{",
+			"comment_start_string": "{#"
+		}
+	},
+	"template2-Renew": {
+		"filename": "template4.tex",
+		"suffix": "tex",
+		"renderer": "jinja2",
+		"env_param": {
+			"block_start_string": "%{%",
+			"variable_start_string": "%{{",
+			"comment_start_string": "%{#"
+		}
+	}
+}

@@ -1,0 +1,43 @@
+\documentclass{vadscript}
+
+\begin{document}
+
+\gentitle{
+	%{{ scenario.other_info['index'] }}
+}{
+	%{{ scenario.other_info['date'] }}
+}{
+	%{{ scenario.title }}
+}
+
+\begin{myfigure}[blanker]
+%{% if scenario.other_info['image']|length == 0 %}
+%{% else %}\centering \includegraphics[width=\linewidth, height=\myspace, keepaspectratio]{%{{ scenario.other_info['image'] }}}
+%{%- endif %}
+\end{myfigure}
+
+%\setstretch{1.0}
+%{% for handler in scenario.handlers() %}
+%{%- if scenario.dialogue[handler]['speaker'] in scenario.character %}\begin{sentence}{%{{ scenario.character[scenario.dialogue[handler]['speaker']]['abbreviated'] }}}
+%{%- elif scenario.dialogue[handler]['speaker']|length > 0 %}\begin{sentence}{%{{ scenario.dialogue[handler]['speaker'] }}}
+%{%- else %}\begin{sentence}{}%{% endif %}
+%{{ scenario.dialogue[handler]['text'] }}
+%{# #}\end{sentence}
+
+%{% endfor %}
+
+%{% for name, info in scenario.character.items()|sort(attribute = '1.order') %}
+\addchara{
+	%{{ name }}
+}{
+	%{{ info['abbreviated'] }}
+}{
+	%{{ info['gender'] }}
+}
+%{% endfor %}
+
+\writecast
+
+\picturepadding{%{{ scenario.other_info['imagelist'] }}
+}
+\end{document}
