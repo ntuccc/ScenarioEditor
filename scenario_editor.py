@@ -33,7 +33,7 @@ class ScenarioEditor(tk.Toplevel):
 
 		self._menu()
 
-		self._font = font.Font(t, family = "微軟正黑體", size = 12) #DEFAULT
+		self._font = font.Font(family = "微軟正黑體", size = 12) #DEFAULT
 		self.option_add("*ScenarioEditor*font", self._font)
 
 		ttk.Style().configure("DialogueEditor.Treeview", font = self._font)
