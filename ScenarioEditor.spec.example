@@ -1,0 +1,38 @@
+# -*- mode: python ; coding: utf-8 -*-
+import sys
+sys.path.append('......\ScenarioEditor') #the project path
+
+from daihon.templates import get_addfiles
+
+block_cipher = None
+
+add_files = get_addfiles()
+
+a = Analysis(['ScenarioEditor.py'],
+             pathex=['......\ScenarioEditor'], #the project path
+             binaries=[],
+             datas=add_files,
+             hiddenimports=[],
+             hookspath=[],
+             runtime_hooks=[],
+             excludes=[],
+             win_no_prefer_redirects=False,
+             win_private_assemblies=False,
+             cipher=block_cipher,
+             noarchive=False)
+pyz = PYZ(a.pure, a.zipped_data,
+             cipher=block_cipher)
+exe = EXE(pyz,
+          a.scripts,
+          a.binaries,
+          a.zipfiles,
+          a.datas,
+          [],
+          name='ScenarioEditor',
+          debug=False,
+          bootloader_ignore_signals=False,
+          strip=False,
+          upx=True,
+          upx_exclude=[],
+          runtime_tmpdir=None,
+          console=True )
