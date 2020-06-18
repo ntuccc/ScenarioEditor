@@ -11,6 +11,7 @@ from .character_editor import CharacterEditor
 from .dialogue_editor import DialogueEditor
 from .info_editor import InfoEditor
 
+from .. import templates
 from ..scenario.scenario import Scenario
 
 #TODO: <del>messagebox and filedialog do not block</del>
@@ -237,7 +238,7 @@ class ScenarioEditor(tk.Toplevel):
 		menubar.add_cascade(menu = font_menu, label = '字型')
 	def _extract_menu(self, menu_file):
 		extract_file = tk.Menu(menu_file)
-		with open_text('templates', 'templates.json') as file:
+		with open_text(templates, 'templates.json') as file:
 			#After Py 3.7 dict preserves the order
 			self._templates = json.load(file)
 		for i, tname in enumerate(self._templates, 1):
@@ -259,7 +260,7 @@ class ScenarioEditor(tk.Toplevel):
 		info = self._templates[tname]
 		print(info)
 		if not hasattr(self, f'_extract_env_{tname}'):
-			path = str(resource_path('templates', '.'))
+			path = str(resource_path(templates, '.'))
 			setattr(self, f'_extract_env_{tname}', Environment(loader = FileSystemLoader(path), extensions = [i18n, do, loopcontrols, with_], **info['env_param']))
 		template = getattr(self, f'_extract_env_{tname}').get_template(resource_path('templates', info['filename']))
 		with open(f'{Path(self._filename).stem}.{info["suffix"]}', 'w', encoding = 'utf-8') as file:
@@ -271,7 +272,7 @@ class ScenarioEditor(tk.Toplevel):
 		info = self._templates[tname]
 		if not hasattr(self, f'_extract_env_{tname}'):
 			setattr(self, f'_extract_env_{tname}', Environment(extensions = [i18n, do, loopcontrols, with_], **info['env_param']))
-		doctemplate = DocxTemplate(resource_path('templates', info['filename']))
+		doctemplate = DocxTemplate(resource_path(templates, info['filename']))
 		doctemplate.render({'scenario': self._scenario}, getattr(self, f'_extract_env_{tname}'))
 		doctemplate.save(f'{Path(self._filename).stem}.{info["suffix"]}')
 
