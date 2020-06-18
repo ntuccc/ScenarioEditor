@@ -260,9 +260,9 @@ class ScenarioEditor(tk.Toplevel):
 		info = self._templates[tname]
 		print(info)
 		if not hasattr(self, f'_extract_env_{tname}'):
-			path = str(resource_path(templates, '.'))
-			setattr(self, f'_extract_env_{tname}', Environment(loader = FileSystemLoader(path), extensions = [i18n, do, loopcontrols, with_], **info['env_param']))
-		template = getattr(self, f'_extract_env_{tname}').get_template(resource_path('templates', info['filename']))
+			with resource_path(templates, '.') as path:
+				setattr(self, f'_extract_env_{tname}', Environment(loader = FileSystemLoader(str(path)), extensions = [i18n, do, loopcontrols, with_], **info['env_param']))
+		template = getattr(self, f'_extract_env_{tname}').get_template(info['filename'])
 		with open(f'{Path(self._filename).stem}.{info["suffix"]}', 'w', encoding = 'utf-8') as file:
 			file.write(template.render({'scenario': self._scenario}))
 	def _extract_with_docxtpl(self, tname):
@@ -272,7 +272,8 @@ class ScenarioEditor(tk.Toplevel):
 		info = self._templates[tname]
 		if not hasattr(self, f'_extract_env_{tname}'):
 			setattr(self, f'_extract_env_{tname}', Environment(extensions = [i18n, do, loopcontrols, with_], **info['env_param']))
-		doctemplate = DocxTemplate(resource_path(templates, info['filename']))
+		with resource_path(templates, info['filename']) as template_path:
+			doctemplate = DocxTemplate(str(template_path))
 		doctemplate.render({'scenario': self._scenario}, getattr(self, f'_extract_env_{tname}'))
 		doctemplate.save(f'{Path(self._filename).stem}.{info["suffix"]}')
 
