@@ -11,4 +11,11 @@ class RestoreManager(Caretaker):
 		self._l.append(m)
 	def restore_pop(self):
 		m = self._l.pop()
-		m.executor.restore_from_memento(m)
+		try:
+			m.executor.restore_from_memento(m)
+		except NotRestorableError:
+			self._l.append(m)
+			return False
+		return True
+	def reset(self):
+		self._l.clear()
