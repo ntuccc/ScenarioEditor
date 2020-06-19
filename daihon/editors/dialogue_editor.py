@@ -167,7 +167,7 @@ class DialogueEditor(BaseEditor):
 		if mode == 'END':
 			h = self._scenario.insert_sentence(**self.defaultinfo)
 			self._tree.insert('', 'end', iid = h, text = str(len(self._scenario.dialogue)), values = ['', None, ''], tags = '')
-			self.callback(EditorEvent(description = 'DialogueEditor', action = 'NewSentence', key = h, before = None, after = None))
+			self.save_memento(action = 'NewSentence', detail = {'key': h, 'before': None, 'after': None})
 			return h
 		else:
 			if len(self._selection) == 0 or (mode != 'up' and mode != 'down'):
@@ -184,7 +184,7 @@ class DialogueEditor(BaseEditor):
 				self._scenario.set_sentence_order(newh, new_index) #!!!this is O(n) operation!!!
 				self._tree.insert('',  new_index, iid = newh, values = ['', None, ''], tags = '')
 			self._reorder_line_number()
-			self.callback(EditorEvent(description = 'DialogueEditor', action = f'NewSentenceBatch{mode}', key = newh_l, before = ite_l, after = None))
+			self.save_memento(action = f'NewSentenceBatch{mode}', detail = {'key': newh_l, 'before': ite_l, 'after': None})
 	def _replace_text(self, c):
 		if len(self._selection) != 1:
 			return
@@ -193,7 +193,7 @@ class DialogueEditor(BaseEditor):
 		sol_text = text.replace(' ', c, 1)
 		self._modify_info(selection, (sol_text, ), ('text', ), ('sentence', ), (False, ))
 		self._tree.selection_set(selection)
-		self.callback(EditorEvent(description = 'DialogueEditor', action = 'ReplaceSpace', key = c, before = text, after = sol_text))
+		self.save_memento(action = 'ReplaceSpace', detail = {'key': c, 'before': text, 'after': sol_text})
 	def _merge_text(self, mode, pad: str = ' '):
 		if len(self._selection) != 1:
 			return
@@ -215,14 +215,14 @@ class DialogueEditor(BaseEditor):
 		self._tree.selection_set(merge_into)
 		self._delete_text(selection)
 		self._reorder_line_number()
-		self.callback(EditorEvent(description = 'DialogueEditor', action = 'MergeSentence', key = key_info, before = before_info, after = sol_text))
+		self.save_memento(action = 'MergeSentence', detail = {'key': key_info, 'before': before_info, 'after': sol_text})
 	def _delete_selected_text(self):
 		selection = self._selection
 		if len(selection) == 0:
 			return
 		if not messagebox.askokcancel('確認', f'即將刪除 {str(len(selection))} 個句子\n確定要刪除嗎？'):
 			return
-		self.callback(EditorEvent(description = 'DialogueEditor', action = 'DeleteSentence', key = selection, before = [self._tree.index(s) for s in selection], after = None))
+		self.save_memento(action = 'DeleteSentence', detail = {'key': selection, 'before': [self._tree.index(s) for s in selection], 'after': None})
 		self._tree.selection_remove(*selection)
 		self._delete_text(*selection)
 		self._reorder_line_number()
@@ -295,7 +295,7 @@ class DialogueEditor(BaseEditor):
 		for handler in self._selection:
 			ori_d[handler] = self._scenario.dialogue[handler][key]
 			self._modify_info(handler, (s, ), (key, ), (tree_key, ), (tag_change, ))
-		self.callback(EditorEvent(description = 'DialogueEditor', action = 'ModifySelectedInfo', key = key, before = ori_d, after = s))
+		self.save_memento(action = 'ModifySelectedInfo', detail = {'key': key, 'before': ori_d, 'after': s})
 		'''
 		if self._selection and len(self._selection) == 1:
 			handler = self._selection[0]
@@ -317,7 +317,7 @@ class DialogueEditor(BaseEditor):
 			l = self._scenario.batch_increment_sentence_order(self._selection)
 		else:
 			l = self._scenario.batch_decrement_sentence_order(self._selection)
-		self.callback(EditorEvent(description = 'DialogueEditor', action = 'MoveSentence', key = l, before = None, after = 'up' if up else 'down'))
+		self.save_memento(action = 'MoveSentence', detail = {'key': l, 'before': None, 'after': 'up' if up else 'down'})
 		for h in l:
 			index = self._tree.index(h)
 			h_replaced = self._tree.prev(h) if up else self._tree.next(h)
@@ -337,7 +337,7 @@ class DialogueEditor(BaseEditor):
 		ori_text = self._injure_encode()
 		a = InjureTextDialog(self, '編輯台詞', ori_text).result
 		if a is not None:
-			self.callback(EditorEvent(description = 'DialogueEditor', action = 'injure', key = None, before = ori_text, after = a))
+			self.save_memento(action = 'injure', detail = {'key': None, 'before': ori_text, 'after': a})
 			self._injure_decode(a)
 	def _injure_encode(self) -> str:
 		l = []
@@ -413,7 +413,7 @@ class DialogueEditor(BaseEditor):
 			if self.expand_info(info) is True:
 				changed = True
 		if changed:
-			self.callback(EditorEvent(description = 'DialogueEditor', action = 'LoadAdapt', key = None, before = None, after = None))
+			self.save_memento(action = 'LoadAdapt', detail = {})
 
 class InjureTextDialog(simpledialog.Dialog):
 	def __init__(self, parent, title, text):

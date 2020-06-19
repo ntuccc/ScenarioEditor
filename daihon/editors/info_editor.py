@@ -91,7 +91,7 @@ class InfoEditor(BaseEditor):
 		info['imagelist'] = self._imagelist_var.get()
 		...
 
-		self.callback(EditorEvent(description = 'InfoEditor', action = 'UpdateInfo', key = None, before = ori, after = now))
+		self.save_memento(action = 'UpdateInfo', detail = {'key': None, 'before': ori, 'after': now})
 	def fetch_info(self):
 		info = self._scenario.other_info
 
@@ -110,4 +110,4 @@ class InfoEditor(BaseEditor):
 		if self.expand_info(info) is True:
 			changed = True
 		if changed:
-			self.callback(EditorEvent(description = 'InfoEditor', action = 'LoadAdapt', key = None, before = None, after = None))
+			self.save_memento(action = 'LoadAdapt', detail = {})

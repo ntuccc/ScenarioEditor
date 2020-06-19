@@ -112,7 +112,7 @@ class CharacterFrame(tk.Frame):
 		def f(*_):
 			if self._character_info:
 				self.namefocusin_check()
-				self._editor.callback(EditorEvent(description = 'CharacterEditor', action = info_key, key = self._tmpname or self.name, before = self._character_info[info_key], after = var.get()))
+				self._editor.save_memento(action = info_key, detail = {'key': self._tmpname or self.name, 'before': self._character_info[info_key], 'after': var.get()})
 				self._character_info[info_key] = var.get()
 		return f
 	def _namefocusin(self, e):
@@ -243,7 +243,7 @@ class CharacterEditor(BaseEditor, VerticalScrolledFrame):
 			if self.expand_info(info) is True:
 				changed = True
 		if changed:
-			self.callback(EditorEvent(description = 'CharacterEditor', action = 'LoadAdapt', key = None, before = None, after = None))
+			self.save_memento(action = 'LoadAdapt',  detail ={})
 	@staticmethod
 	def destroy_node(l, node):
 		print(455)
@@ -275,7 +275,7 @@ class CharacterEditor(BaseEditor, VerticalScrolledFrame):
 		self._add_chara_tail(name, self._scenario.character_info(name))
 		self._newcharaframe.name = ''
 
-		self.callback(EditorEvent(description = 'CharacterEditor', action = 'NewChara', key = name, before = name, after = name))
+		self.save_memento(action = 'NewChara', detail = {'key': name, 'before': name, 'after': name})
 	def _add_chara_tail(self, name, character_info) -> CharacterFrame:
 		newframe = CharacterFrame(master = self._listframe, name = name, character_info = character_info)
 		#newframe.name = name
@@ -288,7 +288,7 @@ class CharacterEditor(BaseEditor, VerticalScrolledFrame):
 		name = node.value.name
 		self.destroy_node(self._charaframes_list, node)
 		self._scenario.delete_character(name)
-		self.callback(EditorEvent(description = 'CharacterEditor', action = 'DeleteChara', key = name, before = name, after = None))
+		self.save_memento(action = 'DeleteChara', detail = {'key': name, 'before': name, 'after': None})
 	def move_order(self, node, mode):
 		if mode not in ('up', 'down'):
 			return
@@ -300,7 +300,7 @@ class CharacterEditor(BaseEditor, VerticalScrolledFrame):
 			if node.next is None:
 				return
 			another = node.next
-		self.callback(EditorEvent(description = 'CharacterEditor', action = 'MoveChara', key = node.value.name, before = None, after = mode))
+		self.save_memento(action = 'MoveChara', detail = {'key': node.value.name, 'before': None, 'after': mode})
 		node.value.name, another.value.name = another.value.name, node.value.name
 		node.value.character_info_modify(self._scenario.character_info(node.value.name))
 		another.value.character_info_modify(self._scenario.character_info(another.value.name))
@@ -313,7 +313,7 @@ class CharacterEditor(BaseEditor, VerticalScrolledFrame):
 			except UserWarning:
 				success = False
 		if success:
-			self.callback(EditorEvent(description = 'CharacterEditor', action = 'RenameChara', key = (n1, n2), before = n1, after = n2))
+			self.save_memento(action = 'RenameChara', detail = {'key': (n1, n2), 'before': n1, 'after': n2})
 		return success
 
 if __name__ == '__main__':
