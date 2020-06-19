@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from typing import Any
 
 class Originator:
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
 	_caretaker: Caretaker
 	def set_caretaker(self, c):
 		self._caretaker = c

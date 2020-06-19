@@ -2,14 +2,16 @@ from collections import namedtuple
 from copy import copy
 import tkinter as tk
 
+from .memento import Originator
+
 from ..scenario.base import ScenarioBase
 
 EditorEvent = namedtuple('EditorEvent', ('description', 'action', 'key', 'before', 'after'))
 
-class BaseEditor(tk.Frame):
+class BaseEditor(tk.Frame, Originator):
 	defaultinfo = {}
 	def __init__(self, master, *args, **kwargs):
-		super().__init__(master, *args, **kwargs)
+		tk.Frame(self, master, *args, **kwargs)
 		self._scenario = None
 		self._callback = lambda e: None
 	def load_scenario(self, scenario: ScenarioBase):
