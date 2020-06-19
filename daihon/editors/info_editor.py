@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext
 
-from .base_editor import BaseEditor, EditorEvent
+from .base import BaseEditor, EditorEvent
 
 from ..scenario.base import ScenarioWithCharacters, ScenarioWithDialogue
 

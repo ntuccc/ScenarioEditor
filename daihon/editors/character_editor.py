@@ -6,7 +6,7 @@ from typing import Optional
 from warnings import warn
 
 from .new_character_dialog import NewCharacterFrame
-from .base_editor import BaseEditor, EditorEvent
+from .base import BaseEditor, EditorEvent
 
 from ..ast.linkedlist import listnode, linkedlist
 from ..scenario.base import ScenarioWithCharacters
