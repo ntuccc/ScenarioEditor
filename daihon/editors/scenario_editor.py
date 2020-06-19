@@ -17,14 +17,6 @@ from ..scenario.scenario import Scenario
 #TODO: <del>messagebox and filedialog do not block</del>
 #use <del>grab_set and wait_window</del> parent
 
-def resource(path):
-	try:
-		base_path = Path(sys._MEIPASS)
-	except:
-		base_path = Path('.')
-
-	return base_path / path
-
 class FileState(Enum):
 	NewUnFiled = auto()
 	UnSaved = auto()
