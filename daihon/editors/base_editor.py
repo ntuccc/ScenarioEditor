@@ -11,7 +11,7 @@ EditorEvent = namedtuple('EditorEvent', ('description', 'action', 'key', 'before
 class BaseEditor(tk.Frame, Originator):
 	defaultinfo = {}
 	def __init__(self, master, *args, **kwargs):
-		tk.Frame(self, master, *args, **kwargs)
+		tk.Frame.__init__(self, master, *args, **kwargs)
 		self._scenario = None
 		self._callback = lambda e: None
 	def load_scenario(self, scenario: ScenarioBase):
