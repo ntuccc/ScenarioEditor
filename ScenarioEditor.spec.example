@@ -1,15 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
+from pathlib import Path
+project_path = r'...' #insert the project path here
+
 import sys
-sys.path.append('......\ScenarioEditor') #the project path
+sys.path.append(project_path)
 
 from daihon.templates import get_addfiles
 
 block_cipher = None
 
-add_files = get_addfiles()
+add_files = get_addfiles(project_path)
 
-a = Analysis(['ScenarioEditor.py'],
-             pathex=['......\ScenarioEditor'], #the project path
+a = Analysis([Path(project_path) / 'ScenarioEditor.py'],
+             pathex=[project_path],
              binaries=[],
              datas=add_files,
              hiddenimports=[],

@@ -3,10 +3,13 @@ from pathlib import PurePath
 from os.path import relpath
 
 #used by pyinstaller
-def get_addfiles():
+def get_addfiles(project_path = None):
 
 	dirname = PurePath(__file__).parent
-	dir_relpath = PurePath(relpath(dirname))
+	if project_path is None:
+		dir_relpath = PurePath(relpath(dirname))
+	else:
+		dir_relpath = PurePath(relpath(dirname, project_path))
 
 	with open(dirname / 'templates.json') as f:
 		temp = json.load(f)
