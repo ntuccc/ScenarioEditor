@@ -207,22 +207,26 @@ class ScenarioEditorView(tk.Toplevel):
 	def _menu(self):
 		self.option_add("*ScenarioEditor*tearOff", False)
 		menubar = tk.Menu(self)
-		self['menu'] = menubar
+		self['menu'] = menubar #meaningful in Tk. self['menu'] returns a plain string in python, though
+		self._menubar = menubar #stored in python object
 
 		menu_file = tk.Menu(menubar)
-		menu_file.add_command(label = '新增檔案', command = self.ask_new, accelerator = 'Ctrl+N')
-		menu_file.add_command(label = '開啟檔案', command = self.ask_load, accelerator = 'Ctrl+O')
-		menu_file.add_command(label = '儲存檔案', command = self.ask_save, accelerator = 'Ctrl+S')
+		self._menu_file = menu_file
 		#menu_file.add_command(label = '匯出', command = self.extract, accelerator = 'Ctrl+E')
 
-		self.bind('<Control-n>', self.ask_new)
-		self.bind('<Control-o>', self.ask_load)
-		self.bind('<Control-s>', self.ask_save)
 		#self.bind('<Control-e>', self.extract)
 
 		menu_file.add_cascade(menu = self._extract_menu(menu_file), label = '匯出')
 
 		menubar.add_cascade(menu = menu_file, label = '檔案')
+	@property
+	def menubar(self):
+		return self._menubar
+	@property
+	def menu_file(self):
+		return self._menu_file
+	def add_font_menu(self):
+		menubar = self._menubar
 
 		font_menu = tk.Menu(menubar)
 		font_menu.add_command(label = '字型設定', command = self.set_font_command)
@@ -269,10 +273,52 @@ class ScenarioEditorView(tk.Toplevel):
 		doctemplate.render({'scenario': self._scenario}, getattr(self, f'_extract_env_{tname}'))
 		doctemplate.save(f'{Path(self._filename).stem}.{info["suffix"]}')
 
+class FileManager:
+	provided_command = [
+		('新增檔案', 'new', 'Ctrl+N', '<Control-n>'),
+		('開啟檔案', 'load', 'Ctrl+O', '<Control-o>'),
+		('儲存檔案', 'save', 'Ctrl+S', '<Control-s>'),
+	]
+	def new(self):
+		pass
+	def load(self):
+		pass
+	def save(self):
+		pass
+
+class Extractor:
+	pass
+
 class ScenarioEditor:
 	def __init__(self, master, *args, **kwargs):
-		self.view = ScenarioEditorView(master, *args, **kwargs)
-		self.view.onclose_register(master.destroy)
+		fm = FileManager()
+		ex = Extractor()
+		view = ScenarioEditorView(master, *args, **kwargs)
+
+		self.fm = fm
+		self.ex = ex
+		self.view = view
+
+		view.onclose_register(master.destroy)
+
+		self.build_fm_menu()
+
+		view.add_font_menu()
+	def build_fm_menu(self):
+		fm = self.fm
+		view = self.view
+
+		for t in fm.provided_command:
+			command = getattr(self, f'ask_{t[1]}')
+			view.menu_file.add_command(label = t[0], command = command, accelerator = t[2])
+			if len(t) >= 4:
+				view.bind(t[3], command)
+	def ask_new(self, *args, **kwargs):
+		pass
+	def ask_load(self, *args, **kwargs):
+		pass
+	def ask_save(self, *args, **kwargs):
+		pass
 
 if __name__ == '__main__':
 	t = tk.Tk()
