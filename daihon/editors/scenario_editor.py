@@ -23,7 +23,7 @@ class FileState(Enum):
 	UnFiled = auto()
 	Saved = auto()
 
-class ScenarioEditor(tk.Toplevel):
+class ScenarioEditorView(tk.Toplevel):
 	def __init__(self, master, *args, load_path: Path = None, **kwargs):
 		super().__init__(master, *args, **kwargs, class_ = 'ScenarioEditor')
 
@@ -269,11 +269,15 @@ class ScenarioEditor(tk.Toplevel):
 		doctemplate.render({'scenario': self._scenario}, getattr(self, f'_extract_env_{tname}'))
 		doctemplate.save(f'{Path(self._filename).stem}.{info["suffix"]}')
 
+class ScenarioEditor:
+	def __init__(self, master, *args, **kwargs):
+		self.view = ScenarioEditorView(master, *args, **kwargs)
+		self.view.onclose_register(master.destroy)
+
 if __name__ == '__main__':
 	t = tk.Tk()
 	e = ScenarioEditor(t)
 	#e.pack()
 	t.withdraw()
-	e.onclose_register(t.destroy)
 	#e.set_font(font.nametofont('TkDefaultFont'))
 	t.mainloop()
