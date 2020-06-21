@@ -94,6 +94,8 @@ class ScenarioEditor:
 		rm.set_push_callback(self.rm_push_callback)
 		rm.set_restore_callback(self.rm_restore_callback)
 
+		view.bind('<Control-z>', self.restore)
+
 		self.fm = fm
 		self.ex = ex
 		self.rm = rm
@@ -122,8 +124,14 @@ class ScenarioEditor:
 			fm.filestate = FileState.UnSaved
 		elif fm.filestate is FileState.NewUnFiled:
 			fm.filestate = FileState.UnFiled
+	def restore(self, _):
+		success = self.rm.restore_pop()
+		if not success:
+			messagebox.showwarning("警告", "無法還原至上一步！", parent = self.view)
 	def rm_restore_callback(self, m):
-		pass
+		fm = self.fm
+		if fm.filestate is FileState.Saved:
+			fm.filestate = FileState.UnSaved
 	def build_fm_menu(self):
 		fm = self.fm
 		view = self.view

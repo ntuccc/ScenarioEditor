@@ -22,7 +22,8 @@ class Memento:
 class Caretaker:
 	def push(self, m: Memento):
 		raise NotImplementedError
-	def restore_pop(self):
+	def restore_pop(self) -> bool:
+		#if NotRestorableError catched, return False
 		raise NotImplementedError
 	def reset(self):
 		raise NotImplementedError
