@@ -396,7 +396,7 @@ class DialogueEditor(BaseEditor):
 			except KeyError:
 				l.append(name)
 		return sorted(d.keys(), key = lambda n: d[n]) + l
-	def fetch_character_info(self, changes: list):
+	def fetch_character_info(self, changes: list = None):
 		l = self._grab_character_order()
 		self._speaker_edit_combobox['value'] = ('', *l)
 		self._select_all_combobox['value'] = ('(選擇角色以全選)', *l)
