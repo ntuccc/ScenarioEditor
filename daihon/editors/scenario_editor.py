@@ -12,7 +12,7 @@ from .dialogue_editor import DialogueEditor
 from .info_editor import InfoEditor
 from .file import FileState, FileManager
 from .extract import Extractor
-from .restore import RestoreManager
+from .restore import RestoreManager, NotRestorableError
 
 #TODO: <del>messagebox and filedialog do not block</del>
 #use <del>grab_set and wait_window</del> parent
@@ -90,9 +90,9 @@ class ScenarioEditor:
 		rm = RestoreManager()
 		view = ScenarioEditorView(master, *args, **kwargs)
 
-		fm.set_state_switch_callback(self.filestate_switch_callback)
-		rm.set_push_callback(self.rm_push_callback)
-		rm.set_restore_callback(self.rm_restore_callback)
+		fm.set_filestate.register(self.filestate_switch_callback)
+		rm.push.register(self.rm_push_callback)
+		rm.restore_pop.register(self.rm_restore_callback)
 
 		view.bind('<Control-z>', self.restore)
 
@@ -121,17 +121,18 @@ class ScenarioEditor:
 		#self._record.append(e)
 		fm = self.fm
 		if fm.filestate is FileState.Saved:
-			fm.filestate = FileState.UnSaved
+			fm.set_filestate(FileState.UnSaved)
 		elif fm.filestate is FileState.NewUnFiled:
-			fm.filestate = FileState.UnFiled
+			fm.set_filestate(FileState.UnFiled)
 	def restore(self, _):
-		success = self.rm.restore_pop()
-		if not success:
+		try:
+			self.rm.restore_pop()
+		except NotRestorableError as e:
 			messagebox.showwarning("警告", "無法還原至上一步！", parent = self.view)
 	def rm_restore_callback(self, m):
 		fm = self.fm
 		if fm.filestate is FileState.Saved:
-			fm.filestate = FileState.UnSaved
+			fm.set_filestate(FileState.UnSaved)
 	def build_fm_menu(self):
 		fm = self.fm
 		view = self.view
@@ -209,7 +210,7 @@ class ScenarioEditor:
 		self._i_editor.load_scenario(self.fm.scenario)
 		self._d_editor.fetch_character_info([])
 		if new:
-			self.fm.filestate = FileState.NewUnFiled #prevent new loading memento writing to UnFiled
+			self.fm.set_filestate(FileState.NewUnFiled) #prevent new loading memento writing to UnFiled
 	def ask_new(self, *args, **kwargs):
 		a = self._filemanager_check()
 		if a is None:

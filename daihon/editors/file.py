@@ -1,6 +1,7 @@
 from enum import Enum, auto
 
 from . import Scenario
+from ..utils.decorators import callbackmethod
 
 class FileState(Enum):
 	NewUnFiled = auto()
@@ -26,7 +27,7 @@ class FileManager:
 		self.file = None
 		self.filename = 'untitled'
 		#self._record = []
-		self.filestate = FileState.NewUnFiled #override any change from editors
+		self.set_filestate(FileState.NewUnFiled) #override any change from editors
 	def load(self, path):
 		try:
 			new_f = open(path, 'r+', encoding = 'utf-8')
@@ -40,12 +41,12 @@ class FileManager:
 		self.file = new_f
 		self.filename = path.name
 		#self._record = []
-		self.filestate = FileState.Saved
+		self.set_filestate(FileState.Saved)
 	def save(self):
 		self.file.seek(0)
 		self.scenario.save(self.file, indent = '\t', ensure_ascii = False)
 		self.file.truncate()
-		self.filestate = FileState.Saved
+		self.set_filestate(FileState.Saved)
 	def make(self, path):
 		if path.suffix == '':
 			path = path.with_suffix('.json')
@@ -58,7 +59,7 @@ class FileManager:
 			raise e
 		self.file = new_f
 		self.filename = path.name #this 'path.name' is the file name without parent
-		self.filestate = FileState.UnSaved
+		self.set_filestate(FileState.UnSaved)
 	def close(self):
 		try:
 			self.file.close()
@@ -67,9 +68,7 @@ class FileManager:
 	@property
 	def filestate(self):
 		return self._filestate
-	@filestate.setter
-	def filestate(self, state):
+	@callbackmethod
+	def set_filestate(self, state):
 		self._filestate = state
-		self._state_switch_callback(state)
-	def set_state_switch_callback(self, f):
-		self._state_switch_callback = f
+		return state
