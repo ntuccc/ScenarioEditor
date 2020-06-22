@@ -21,10 +21,13 @@ class CallbackMethodWrapper:
 		self._cache = {}
 	def __get__(self, obj, klass):
 		if obj is None:
-			return self._f
+			#return self._f
+			obj = klass
 
 		info = f'_callback{id(self)}'
-		if not hasattr(obj, info):
+		#here not use hasattr
+		#to ensure the callbacks of klass do not interfere the one of the obj
+		if info not in obj.__dict__:
 			setattr(obj, info, [])
 
 		if id(obj) not in self._cache:
@@ -71,3 +74,12 @@ if __name__ == '__main__':
 	test()
 	#233 456
 	print(test.__name__, test.__doc__)
+
+	class T:
+		@callbackmethod
+		def f(self):
+			print(111)
+	T.f.register(callback)
+	T.f()
+	t = T() #111 456
+	t.f() #111
