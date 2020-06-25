@@ -1,10 +1,29 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
+#object for memento and two commands
+class Memento:
+	def __init__(self, detail = None, *, execute = None, rollback = None):
+		if detail is None:
+			detail = {}
+		self.detail = detail
+		if execute is not None:
+			self.execute = execute
+		if rollback is not None:
+			self.rollback = rollback
+	def execute(self):
+		raise NotImplementedError
+	def rollback(self):
+		raise NotRestorableError
 
 class Originator:
 	_caretaker: Caretaker
 	def set_caretaker(self, c):
 		self._caretaker = c
+	def save_memento(self, m: Memento):
+		if hasattr(self, '_caretaker') and self._caretaker is not None:
+			self._caretaker.push(memento)
+		return memento
+	'''
 	def save_memento(self, action: str, detail: dict):
 		memento = Memento(self, action, detail)
 		if hasattr(self, '_caretaker') and self._caretaker is not None:
@@ -12,12 +31,7 @@ class Originator:
 		return memento
 	def restore_from_memento(self, m: Memento):
 		raise NotImplementedError
-
-@dataclass
-class Memento:
-	executor: Originator
-	action: str
-	detail: dict
+	'''
 
 class Caretaker:
 	def push(self, m: Memento):
