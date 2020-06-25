@@ -11,13 +11,14 @@ class RestoreManager(Caretaker):
 	def push(self, m):
 		if len(self._l) >= self._MAXIMUM:
 			self._l.pop()
+		m.execute()
 		self._l.append(m)
 		return m
 	@callbackmethod
 	def restore_pop(self):
 		m = self._l.pop()
 		try:
-			m.executor.restore_from_memento(m)
+			m.rollback()
 		except NotRestorableError as e:
 			self._l.append(m)
 			raise e
