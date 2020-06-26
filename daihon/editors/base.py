@@ -2,7 +2,7 @@ from collections import namedtuple
 from copy import copy
 import tkinter as tk
 
-from .memento import Originator
+from .memento import Originator, Memento
 
 from ..scenario.base import ScenarioBase
 
@@ -14,8 +14,8 @@ class BaseEditorView(tk.Frame):
 
 class BaseEditor(Originator):
 	defaultinfo = {}
-	def __init__(self, master, *args, **kwargs):
-		view = BaseEditorView(master, *args, **kwargs)
+	def __init__(self, master, *args, viewClass = BaseEditorView, **kwargs):
+		view = viewClass(master, *args, **kwargs)
 
 		self.view = view
 		self._scenario = None
@@ -44,3 +44,10 @@ class BaseEditor(Originator):
 	@callback.setter
 	def callback(self, f):
 		self._callback = f
+
+class BaseLoadAdaptMemento(Memento):
+	def __init__(self):
+		self.changed = True
+	def rollback(self):
+		if self.changed:
+			raise NotRestorableError

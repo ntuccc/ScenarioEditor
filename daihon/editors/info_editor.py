@@ -1,61 +1,78 @@
 import tkinter as tk
+from functools import partial
+from itertools import count
 from tkinter import ttk, messagebox, simpledialog, scrolledtext
 
-from .base import BaseEditor, EditorEvent
+from .base import BaseEditor, BaseEditorView, BaseLoadAdaptMemento
+from .memento import Memento
 
 from ..scenario.base import ScenarioWithCharacters, ScenarioWithDialogue
+
+class InfoEditorView(BaseEditorView):
+	def __init__(self, master, *args, **kwargs):
+		super().__init__(master, *args, **kwargs, class_ = 'InfoEditor')
+
+		self._main_frame = tk.Frame(self)
+		self._button_frame = tk.Frame(self)
+
+		self._main_frame.pack(expand = True, fill = tk.BOTH)
+		self._button_frame.pack(expand = True, fill = tk.X)
+
+		self._entry_counter = count()
+		self._button_counter = count()
+	def add_entry(self, text):
+		i = next(self._entry_counter)
+
+		var = tk.StringVar(self._main_frame)
+		label = tk.Label(self._main_frame, text = text)
+		entry = tk.Entry(self._main_frame, textvariable = var)
+
+		label.grid(row = i, column = 0, padx = 20)
+		entry.grid(row = i, column = 1)
+
+		return var
+	def add_button(self, text, command):
+		i = next(self._button_counter)
+
+		b = tk.Button(self._button_frame, text = text, command = command)
+		b.grid(row = 0, column = i)
 
 class InfoEditor(BaseEditor):
 	defaultinfo = {'index': '', 'date': '', 'image': '', 'imagelist': ''}
 	def __init__(self, master, *args, **kwargs):
-		super().__init__(master, *args, **kwargs, class_ = 'InfoEditor')
-		
-		main_frame = tk.Frame(self)
+		super().__init__(master, *args, viewClass = InfoEditorView, **kwargs)
 
-		self._title_var = tk.StringVar(main_frame)
-		self._index_var = tk.StringVar(main_frame)
-		self._date_var = tk.StringVar(main_frame)
-		self._image_var = tk.StringVar(main_frame)
-		self._imagelist_var = tk.StringVar(main_frame)
-		...
+		self.entries = [
+			{
+				'name': '標題',
+				'getter': self._get_title,
+				'setter': self._set_title,
+			},
+			{
+				'name': '編號',
+				'getter': partial(self._get_info, 'index'),
+				'setter': partial(self._set_title, 'index'),
+			},
+			{
+				'name': '日期',
+				'getter': partial(self._get_info, 'date'),
+				'setter': partial(self._set_title, 'date'),
+			},
+			{
+				'name': '圖檔',
+				'getter': partial(self._get_info, 'image'),
+				'setter': partial(self._set_title, 'image'),
+			},
+			{
+				'name': '填充圖檔',
+				'getter': partial(self._get_info, 'imagelist'),
+				'setter': partial(self._set_title, 'imagelist'),
+			},
+			#...
+		]
 
-		title_label = tk.Label(main_frame, text = '標題')
-		title_entry = tk.Entry(main_frame, textvariable = self._title_var)
-		index_label = tk.Label(main_frame, text = '編號')
-		index_entry = tk.Entry(main_frame, textvariable = self._index_var)
-		date_label = tk.Label(main_frame, text = '日期')
-		date_entry = tk.Entry(main_frame, textvariable = self._date_var)
-		image_label = tk.Label(main_frame, text = '圖檔')
-		image_entry = tk.Entry(main_frame, textvariable = self._image_var)
-		imagelist_label = tk.Label(main_frame, text = '填充圖檔')
-		imagelist_entry = tk.Entry(main_frame, textvariable = self._imagelist_var)
-		...
-		...
-
-		title_label.grid(row = 0, column = 0, padx = 20)
-		title_entry.grid(row = 0, column = 1)
-		index_label.grid(row = 1, column = 0, padx = 20)
-		index_entry.grid(row = 1, column = 1)
-		date_label.grid(row = 2, column = 0, padx = 20)
-		date_entry.grid(row = 2, column = 1)
-		image_label.grid(row = 3, column = 0, padx = 20)
-		image_entry.grid(row = 3, column = 1)
-		imagelist_label.grid(row = 4, column = 0, padx = 20)
-		imagelist_entry.grid(row = 4, column = 1)
-		...
-		...
-
-		main_frame.pack(expand = True, fill = tk.BOTH)
-
-		button_frame = tk.Frame(self)
-
-		upload = tk.Button(button_frame, text = '套用變更', command = self._apply)
-		cancel = tk.Button(button_frame, text = '還原變更', command = self.fetch_info)
-
-		upload.grid(row = 0, column = 0)
-		cancel.grid(row = 0, column = 1)
-
-		button_frame.pack(expand = True, fill = tk.X)
+		self._add_entries()
+		self._add_buttons()
 	def load_scenario(self, scenario):
 		'''
 		load the scenario and build the editor UI
@@ -63,51 +80,70 @@ class InfoEditor(BaseEditor):
 		self._scenario = scenario
 		self._adapt_info()
 		self.fetch_info()
+	def _add_entries(self):
+		entries = self.entries
+
+		for d in entries:
+			var = self.view.add_entry(d['name'])
+			d['var'] = var
+	def _add_buttons(self):
+		#simple
+		self.view.add_button(text = '套用變更', command = self._apply)
+		self.view.add_button(text = '還原變更', command = self.fetch_info)
+	def _get_title(self):
+		return self._scenario.title
+	def _get_info(self, info):
+		reutrn self._scenario.other_info[info]
+	def _set_title(self, title):
+		self._scenario.title = title
+	def _set_info(self, info, value):
+		self._scenario.other_info[info] = value
 	def _apply(self):
-		info = self._scenario.other_info
-		ori = (
-			self._scenario.title,
-			info['index'],
-			info['date'],
-			info['image'],
-			info['imagelist']
-			#...
-		)
-		now = (
-			self._title_var.get(),
-			self._index_var.get(),
-			self._date_var.get(),
-			self._image_var.get(),
-			self._imagelist_var.get()
-			#...
-		)
-		if ori == now:
+		try:
+			memento = UpdateInfoMemento(self.entries)
+		except NoNeedApplyError:
 			return
 
-		self._scenario.title = self._title_var.get()
-		info['index'] = self._index_var.get()
-		info['date'] = self._date_var.get()
-		info['image'] = self._image_var.get()
-		info['imagelist'] = self._imagelist_var.get()
-		...
-
-		self.save_memento(action = 'UpdateInfo', detail = {'key': None, 'before': ori, 'after': now})
+		self.save_memento(m)
+	def apply_info(self):
+		for d in self.entries:
+			d['setter'](d['var'].get())
 	def fetch_info(self):
-		info = self._scenario.other_info
-
-		self._title_var.set(self._scenario.title)
-		self._index_var.set(info['index'])
-		self._date_var.set(info['date'])
-		self._image_var.set(info['image'])
-		self._imagelist_var.set(info['imagelist'])
-		...
+		for d in self.entries:
+			d['var'].set(d['getter']())
 	def _adapt_info(self):
 		"""
 		only called when loading
 		"""
-		changed = False
+		self.save_memento(LoadAdaptInfoMemento(self._scenario))
+
+class NoNeedApplyError(ValueError):
+	pass
+
+class UpdateInfoMemento(Memento):
+	def __init__(self, entries):
+		super().__init__()
+
+		self.entries = entries
+
+		ori = tuple(d['getter']() for d in self.entries)
+		now = tuple(d['var'].get() for d in self.entries)
+
+		if ori == now:
+			raise NoNeedApplyError
+		self.ori, self.now = ori, now
+	def execute(self):
+		for d, v in zip(self.entries, self.now):
+			d['setter'](v)
+	def rollback(self):
+		for d, v in zip(self.entries, self.ori):
+			d['setter'](ori)
+
+class LoadAdaptInfoMemento(BaseLoadAdaptMemento):
+	def __init__(self, scenario):
+		self.scenario = scenario
+	def execute(self):
+		self.changed = False
 		info = self._scenario.other_info
 		if self.expand_info(info) is True:
-			changed = True
-		if changed:
-			self.save_memento(action = 'LoadAdapt', detail = {})
+			self.changed = True

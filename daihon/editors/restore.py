@@ -9,9 +9,9 @@ class RestoreManager(Caretaker):
 		self._l = []
 	@callbackmethod
 	def push(self, m):
+		m.execute()
 		if len(self._l) >= self._MAXIMUM:
 			self._l.pop()
-		m.execute()
 		self._l.append(m)
 		return m
 	@callbackmethod
