@@ -39,38 +39,44 @@ class InfoEditorView(BaseEditorView):
 
 class InfoEditor(BaseEditor):
 	defaultinfo = {'index': '', 'date': '', 'image': '', 'imagelist': ''}
-	def __init__(self, master, *args, **kwargs):
-		super().__init__(master, *args, viewClass = InfoEditorView, **kwargs)
-
+	def _init_entries(self):
 		self.entries = [
 			{
 				'name': '標題',
 				'getter': self._get_title,
 				'setter': self._set_title,
+				'var': None,
 			},
 			{
 				'name': '編號',
 				'getter': partial(self._get_info, 'index'),
 				'setter': partial(self._set_title, 'index'),
+				'var': None,
 			},
 			{
 				'name': '日期',
 				'getter': partial(self._get_info, 'date'),
 				'setter': partial(self._set_title, 'date'),
+				'var': None,
 			},
 			{
 				'name': '圖檔',
 				'getter': partial(self._get_info, 'image'),
 				'setter': partial(self._set_title, 'image'),
+				'var': None,
 			},
 			{
 				'name': '填充圖檔',
 				'getter': partial(self._get_info, 'imagelist'),
 				'setter': partial(self._set_title, 'imagelist'),
+				'var': None,
 			},
 			#...
 		]
+	def __init__(self, master, *args, **kwargs):
+		super().__init__(master, *args, viewClass = InfoEditorView, **kwargs)
 
+		self._init_entries()
 		self._add_entries()
 		self._add_buttons()
 	def load_scenario(self, scenario):
