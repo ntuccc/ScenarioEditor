@@ -8,10 +8,16 @@ from ..scenario.base import ScenarioBase
 
 EditorEvent = namedtuple('EditorEvent', ('description', 'action', 'key', 'before', 'after'))
 
-class BaseEditor(tk.Frame, Originator):
-	defaultinfo = {}
+class BaseEditorView(tk.Frame):
 	def __init__(self, master, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
+
+class BaseEditor(Originator):
+	defaultinfo = {}
+	def __init__(self, master, *args, **kwargs):
+		view = BaseEditorView(master, *args, **kwargs)
+
+		self.view = view
 		self._scenario = None
 		self._callback = lambda e: None
 	def load_scenario(self, scenario: ScenarioBase):
