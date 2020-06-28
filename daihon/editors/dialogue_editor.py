@@ -371,27 +371,8 @@ class DialogueEditor(BaseEditor):
 	def _onresize(self, e = None):
 		self._sentence_edit_label['wraplength'] = self._sentence_edit_entry.winfo_width()
 	def _insert_text(self, mode = "END"):
-		if mode == 'END':
-			h = self._scenario.insert_sentence(**self.defaultinfo)
-			self.tree.insert('', 'end', iid = h, text = str(len(self._scenario.dialogue)), values = self.columns_default, tags = '')
-			self.save_memento(action = 'NewSentence', detail = {'key': h, 'before': None, 'after': None})
-			return h
-		else:
-			if mode != 'up' and mode != 'down':
-				return
-			up = (mode == 'up')
-			ite = iter(self._selection) if up else reversed(self._selection)
-			ite_l = list(ite)
-			newh_l = []
-			for h in ite_l:
-				newh = self._scenario.insert_sentence(**self.defaultinfo)
-				newh_l.append(newh)
-				ori_index = self.tree.index(h)
-				new_index = (ori_index + 0) if up else (ori_index + 1)
-				self._scenario.set_sentence_order(newh, new_index) #!!!this is O(n) operation!!!
-				self.tree.insert('',  new_index, iid = newh, values = self.columns_default, tags = '')
-			self.reorder_line_number()
-			self.save_memento(action = f'NewSentenceBatch{mode}', detail = {'key': newh_l, 'before': ite_l, 'after': None})
+		m = InsertSetenceMemento(self, self._scenario, mode)
+		self.save_memento(m)
 	def _replace_text(self, c):
 		selection = self._selection[0]
 		text = self._scenario.dialogue[selection]['text']
