@@ -316,6 +316,9 @@ class DialogueEditor(BaseEditor):
 		#self._sentence_edit_label['wraplength'] = self.winfo_width()
 
 		self.bind('<Configure>', self._onresize)
+	@property
+	def selection(self):
+		return self._selection
 	def destroy(self):
 		self._selection = None
 		super().destroy()
@@ -387,7 +390,7 @@ class DialogueEditor(BaseEditor):
 				new_index = (ori_index + 0) if up else (ori_index + 1)
 				self._scenario.set_sentence_order(newh, new_index) #!!!this is O(n) operation!!!
 				self.tree.insert('',  new_index, iid = newh, values = self.columns_default, tags = '')
-			self._reorder_line_number()
+			self.reorder_line_number()
 			self.save_memento(action = f'NewSentenceBatch{mode}', detail = {'key': newh_l, 'before': ite_l, 'after': None})
 	def _replace_text(self, c):
 		selection = self._selection[0]
@@ -414,7 +417,7 @@ class DialogueEditor(BaseEditor):
 
 		self.tree.selection_set(merge_into)
 		self._delete_text(selection)
-		self._reorder_line_number()
+		self.reorder_line_number()
 		self.save_memento(action = 'MergeSentence', detail = {'key': key_info, 'before': before_info, 'after': sol_text})
 	def _delete_selected_text(self):
 		selection = self._selection
@@ -423,11 +426,11 @@ class DialogueEditor(BaseEditor):
 		self.save_memento(action = 'DeleteSentence', detail = {'key': selection, 'before': [self.tree.index(s) for s in selection], 'after': None})
 		self.tree.selection_remove(*selection)
 		self._delete_text(*selection)
-		self._reorder_line_number()
+		self.reorder_line_number()
 	def _delete_text(self, *handlers):
 		self._scenario.delete_sentence(*handlers)
 		self.tree.delete(*handlers)
-	def _reorder_line_number(self):
+	def reorder_line_number(self):
 		'''
 		used to refresh ALL sentence's order
 		'''
@@ -544,7 +547,7 @@ class DialogueEditor(BaseEditor):
 				color = scenario.character[speaker]['color']
 			sentence = info['text']
 			self.tree.insert('', 'end', iid = handler, values = [speaker, color, sentence], tags = (f'"{speaker}"', ))
-		self._reorder_line_number()
+		self.reorder_line_number()
 		self.fetch_character_info([])
 	def _grab_character_order(self):
 		d, l = {}, []
@@ -599,6 +602,57 @@ class ImageProcessDialog(simpledialog.Dialog):
 		widget.pack(expand = True, fill = tk.BOTH)
 	def buttonbox(self):
 		pass
+
+class DialogueEditorMemento(Memento):
+	def __init__(self, editor, scenario):
+		self._editor = editor
+		self._scenario = scenario
+
+class InsertSetenceMemento(DialogueEditorMemento):
+	def __init__(self, editor, scenario, mode):
+		assert mode in ('END', 'up', 'down'), f'Wrong mode in {self.__class__}'
+		super().__init__(editor, scenario)
+		self.mode = mode
+		self.handler = None
+
+		self.index = self._compute_index()
+	def _compute_index(self):
+		if self.mode == 'END':
+			return (len(self._scenario.dialogue), )
+		else:
+			selection = self.editor.selection
+			index = sorted(self._scenario.batch_get_sentence_order(selection))
+			if self.mode == 'up':
+				return tuple(i + j for j, i in enumerate(index))
+			else:
+				return tuple(i + j + 1 for j, i in enumerate(index))
+	def execute(self):
+		mode = self.mode
+		editor = self._editor
+		scenario = self._scenario
+		index = self.index
+
+		if self.handler is None:
+			self.handler = tuple(scenario.insert_sentence(**editor.defaultinfo) for _ in index)
+		else:
+			for h in self.handler:
+				scenario.insert_sentence(predefined_handler = h, **editor.defaultinfo)
+
+		#index is sorted
+		for h, i in zip(self.handler, index):
+			if mode == 'END': #optimize for END
+				editor.tree.insert('', 'end', iid = h, text = str(len(scenario.dialogue)), values = editor.columns_default, tags = '')
+			else:
+				editor.tree.insert('',  i, iid = h, values = editor.columns_default, tags = '')
+
+		if mode == 'END':
+			#no need to set order
+			pass
+		if mode != 'END':
+			scenario.batch_set_sentence_order(self.handler, index)
+			editor.reorder_line_number()
+	def rollback(self):
+		raise NotImplementedError
 
 if __name__ == '__main__':
 	from scenario import Scenario
