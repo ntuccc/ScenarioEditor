@@ -400,10 +400,8 @@ class DialogueEditor(BaseEditor):
 		selection = self._selection
 		if not messagebox.askokcancel('確認', f'即將刪除 {str(len(selection))} 個句子\n確定要刪除嗎？'):
 			return
-		self.save_memento(action = 'DeleteSentence', detail = {'key': selection, 'before': [self.tree.index(s) for s in selection], 'after': None})
-		self.tree.selection_remove(*selection)
-		self._delete_text(*selection)
-		self.reorder_line_number()
+		m = DeleteSetenceMemento(self, self._scenario)
+		self.save_memento(m)
 	def _delete_text(self, *handlers):
 		self._scenario.delete_sentence(*handlers)
 		self.tree.delete(*handlers)
@@ -588,14 +586,14 @@ class InsertSetenceMemento(DialogueEditorMemento):
 		assert mode in ('END', 'up', 'down'), f'Wrong mode in {self.__class__}'
 		super().__init__(editor, scenario)
 		self.mode = mode
-		self.handler = None
+		self.handlers = None
 
 		self.index = self._compute_index()
 	def _compute_index(self):
 		if self.mode == 'END':
 			return (len(self._scenario.dialogue), )
 		else:
-			selection = self.editor.selection
+			selection = self._editor.selection
 			index = sorted(self._scenario.batch_get_sentence_order(selection))
 			if self.mode == 'up':
 				return tuple(i + j for j, i in enumerate(index))
@@ -607,14 +605,14 @@ class InsertSetenceMemento(DialogueEditorMemento):
 		scenario = self._scenario
 		index = self.index
 
-		if self.handler is None:
-			self.handler = tuple(scenario.insert_sentence(**editor.defaultinfo) for _ in index)
+		if self.handlers is None:
+			self.handlers = tuple(scenario.insert_sentence(**editor.defaultinfo) for _ in index)
 		else:
-			for h in self.handler:
+			for h in self.handlers:
 				scenario.insert_sentence(predefined_handler = h, **editor.defaultinfo)
 
 		#index is sorted
-		for h, i in zip(self.handler, index):
+		for h, i in zip(self.handlers, index):
 			if mode == 'END': #optimize for END
 				editor.tree.insert('', 'end', iid = h, text = str(len(scenario.dialogue)), values = editor.columns_default, tags = '')
 			else:
@@ -624,14 +622,13 @@ class InsertSetenceMemento(DialogueEditorMemento):
 			#no need to set order
 			pass
 		if mode != 'END':
-			scenario.batch_set_sentence_order(self.handler, index)
+			scenario.batch_set_sentence_order(self.handlers, index)
 			editor.reorder_line_number()
 	def rollback(self):
-		self.editor.tree.selection_remove(*self.handler)
-		self.scenario.delete_sentence(*self.handler)
-		self.editor.tree.delete(*self.handler)
+		self._editor.tree.selection_remove(*self.handlers)
+		self._editor._delete_text(*self.handlers)
 		if self.mode != 'END':
-			self.editor.reorder_line_number()
+			self._editor.reorder_line_number()
 
 class ReplaceTextMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, c):
@@ -652,7 +649,18 @@ class MergeSetenceMemento(DialogueEditorMemento):
 
 class DeleteSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario):
-		pass
+		super().__init__(editor, scenario)
+		self.handlers = {h: scenario.dialogue[h] for h in editor.selection}
+		self.index = scenario.batch_get_sentence_order(editor.selection)
+	def execute(self):
+		self._editor.tree.selection_remove(*self.handlers)
+		self._editor._delete_text(*self.handlers)
+		self._editor.reorder_line_number()
+	def rollback(self):
+		for h in self.handlers:
+			scenario.insert_sentence(predefined_handler = h, **self.handlers[h])
+		scenario.batch_set_sentence_order(self.handlers.keys(), self.index)
+		self._editor.reorder_line_number()
 
 class MoveSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, mode):
