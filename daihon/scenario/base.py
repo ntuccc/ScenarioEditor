@@ -123,7 +123,7 @@ class ScenarioWithCharactersOrdered(ScenarioWithCharacters):
 
 class ScenarioWithDialogue(metaclass = ABCMeta):
 	@abstractmethod
-	def insert_sentence(self, text, **kwargs):
+	def insert_sentence(self, text, predefined_handler = None, **kwargs):
 		# return a handler
 		raise NotImplementedError
 	@abstractmethod

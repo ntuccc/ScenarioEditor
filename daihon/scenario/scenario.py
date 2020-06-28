@@ -202,8 +202,11 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	def character_names(self):
 		return iter(self._character.keys())
 
-	def insert_sentence(self, text, **kwargs):
-		handler = self._handler_generator()
+	def insert_sentence(self, text, predefined_handler = None, **kwargs):
+		if predefined_handler is None:
+			handler = self._handler_generator()
+		else:
+			handler = predefined_handler
 		while handler in self._dialogue:
 			handler = self._handler_generator()
 		self._dialogue[handler].update(text = text, info = kwargs)
