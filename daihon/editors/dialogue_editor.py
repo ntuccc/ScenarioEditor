@@ -374,12 +374,8 @@ class DialogueEditor(BaseEditor):
 		m = InsertSetenceMemento(self, self._scenario, mode)
 		self.save_memento(m)
 	def _replace_text(self, c):
-		selection = self._selection[0]
-		text = self._scenario.dialogue[selection]['text']
-		sol_text = text.replace(' ', c, 1)
-		self._modify_info(selection, (sol_text, ), ('text', ), ('sentence', ), (False, ))
-		self.tree.selection_set(selection)
-		self.save_memento(action = 'ReplaceSpace', detail = {'key': c, 'before': text, 'after': sol_text})
+		m = ReplaceTextMemento(self, self._scenario, c)
+		self.save_memento(m)
 	def _merge_text(self, mode, pad: str = ' '):
 		up = (mode == 'up')
 		selection = self._selection[0]
@@ -430,8 +426,6 @@ class DialogueEditor(BaseEditor):
 
 		self._last_state = state
 	def _modify_selected_info(self, var, key, tree_key, tag_change = False):
-		if not self._selection:
-			return
 		s = var.get()
 		ori_d = {}
 		for handler in self._selection:
@@ -641,7 +635,16 @@ class InsertSetenceMemento(DialogueEditorMemento):
 
 class ReplaceTextMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, c):
-		pass
+		super().__init__(editor, scenario)
+		self.handler = editor.selection[0]
+		self.ori_text = scenario.dialogue[self.handler]['text']
+		self.sol_text = self.ori_text.replace(' ', c, 1)
+	def execute(self):
+		self._editor._modify_info(self.handler, (self.sol_text, ), ('text', ), ('sentence', ), (False, ))
+		self._editor.tree.selection_set(selection)
+	def rollback(self):
+		self._editor._modify_info(self.handler, (self.ori_text, ), ('text', ), ('sentence', ), (False, ))
+		self._editor.tree.selection_set(selection)
 
 class MergeSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, mode, pad):
