@@ -153,6 +153,12 @@ class ScenarioWithDialogue(metaclass = ABCMeta):
 	def set_sentence_order(self, handler, neworder):
 		raise NotImplementedError
 	@abstractmethod
+	def batch_get_sentence_order(self, handlers):
+		raise NotImplementedError
+	@abstractmethod
+	def batch_set_sentence_order(self, handlers, neworders):
+		raise NotImplementedError
+	@abstractmethod
 	def swap_sentence_order(self, h1, h2):
 		raise NotImplementedError
 	@abstractmethod
