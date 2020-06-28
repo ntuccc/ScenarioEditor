@@ -238,6 +238,41 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	def set_sentence_order(self, handler, neworder):
 		self._handler_list.remove(handler)
 		self._handler_list.insert(neworder, handler)
+	def batch_get_sentence_order(self, handlers):
+		'''
+		Maybe O(|_handler_list|) amortized, better than loop calling get
+		'''
+		reverse_index = {handlers: i for i, handlers in enumerate(self._handler_list)}
+		return [reverse_index[h] for h in handlers]
+	def batch_set_sentence_order(self, handlers, neworders):
+		'''
+		Let N be |_handler_list| and h be |handlers|
+		neworders: list of integers between 0 and N - 1
+		'''
+		N = len(self._handler_list)
+		d = {}
+		#build valid table, O(h) amortized
+		for h, o in zip(handlers, neworders):
+			if o >= 0 and o < N and o not in d:
+				d[o] = h
+		valid_h = set(d.values()) #O(h) amortized
+		#split
+		stay, move = [], [d[i] for i in sorted(d.keys())] #O(hlogh)
+		#O(N) amortized
+		for h in _handler_list:
+			if h not in valid_h: #valid_h is hash set
+				stay.append(h)
+
+		#intersect
+		result = []
+		#O(N) amortized
+		for i in range(N):
+			if i not in d:
+				result.append(stay.pop())
+			else:
+				result.append(move.pop())
+
+		self._handler_list = result
 	def swap_sentence_order(self, h1, h2):
 		i, j = self._handler_list.index(h1), self._handler_list.index(h2)
 		self._handler_list[i], self._handler_list[j] = self._handler_list[j], self._handler_list[i]
