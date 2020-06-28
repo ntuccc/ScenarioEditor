@@ -639,6 +639,26 @@ class InsertSetenceMemento(DialogueEditorMemento):
 		if self.mode != 'END':
 			self.editor.reorder_line_number()
 
+class ReplaceTextMemento(DialogueEditorMemento):
+	def __init__(self, editor, scenario, c):
+		pass
+
+class MergeSetenceMemento(DialogueEditorMemento):
+	def __init__(self, editor, scenario, mode, pad):
+		pass
+
+class DeleteSetenceMemento(DialogueEditorMemento):
+	def __init__(self, editor, scenario):
+		pass
+
+class MoveSetenceMemento(DialogueEditorMemento):
+	def __init__(self, editor, scenario, mode):
+		pass
+
+class InjureSetenceMemento(DialogueEditorMemento):
+	def __init__(self, editor, scenario, s):
+		pass
+
 if __name__ == '__main__':
 	from scenario import Scenario
 	from tkinter import font
