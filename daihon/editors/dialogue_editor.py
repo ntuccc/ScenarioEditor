@@ -652,7 +652,11 @@ class InsertSetenceMemento(DialogueEditorMemento):
 			scenario.batch_set_sentence_order(self.handler, index)
 			editor.reorder_line_number()
 	def rollback(self):
-		raise NotImplementedError
+		self.editor.tree.selection_remove(*self.handler)
+		self.scenario.delete_sentence(*self.handler)
+		self.editor.tree.delete(*self.handler)
+		if self.mode != 'END':
+			self.editor.reorder_line_number()
 
 if __name__ == '__main__':
 	from scenario import Scenario
