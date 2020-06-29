@@ -433,19 +433,8 @@ class DialogueEditor(BaseEditor):
 			if tag_change:
 				self.tree.item(handler, tags = (f'"{content}"', ))
 	def _move_updown(self, up):
-		if up:
-			l = self._scenario.batch_increment_sentence_order(self._selection)
-		else:
-			l = self._scenario.batch_decrement_sentence_order(self._selection)
-		self.save_memento(action = 'MoveSentence', detail = {'key': l, 'before': None, 'after': 'up' if up else 'down'})
-		for h in l:
-			index = self.tree.index(h)
-			h_replaced = self.tree.prev(h) if up else self.tree.next(h)
-			index_after = index + (-1 if up else 1)
-			print(self.tree.item(h))
-			self.tree.item(h, text = str(index_after + 1))
-			self.tree.item(h_replaced, text = str(index + 1))
-			self.tree.move(h, '', index_after)
+		m = MoveSetenceMemento(self, self._scenario, up)
+		self.save_memento(m)
 	def _select_all(self):
 		i = self._select_all_combobox.current()
 		if i == 0:
@@ -690,8 +679,35 @@ class DeleteSetenceMemento(DialogueEditorMemento):
 		self._editor.reorder_line_number()
 
 class MoveSetenceMemento(DialogueEditorMemento):
-	def __init__(self, editor, scenario, mode):
-		pass
+	def __init__(self, editor, scenario, up):
+		super().__init__(editor, scenario)
+		self.up = up
+		self.handlers = editor.selection
+		self._moved = None
+	def execute(self):
+		self._move(self.up)
+	def rollback(self):
+		self._move(not self.up)
+	def _move(self, up):
+		tree = self._editor.tree
+		if up:
+			if self._moved is None:
+				self._moved = self._scenario.batch_increment_sentence_order(self.handlers)
+			else:
+				self._scenario.batch_increment_sentence_order(self._moved)
+		else:
+			if self._moved is None:
+				self._moved = self._scenario.batch_decrement_sentence_order(self.handlers)
+			else:
+				self._scenario.batch_decrement_sentence_order(self._moved)
+		for h in self._moved:
+			index = tree.index(h)
+			h_replaced = tree.prev(h) if up else tree.next(h)
+			index_after = index + (-1 if up else 1)
+			print(tree.item(h))
+			tree.item(h, text = str(index_after + 1))
+			tree.item(h_replaced, text = str(index + 1))
+			tree.move(h, '', index_after)
 
 class InjureSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, s):
