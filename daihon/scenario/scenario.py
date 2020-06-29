@@ -262,6 +262,7 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		for h in _handler_list:
 			if h not in valid_h: #valid_h is hash set
 				stay.append(h)
+		moved_handlers = move.copy()
 
 		#intersect
 		result = []
@@ -273,6 +274,7 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 				result.append(move.pop())
 
 		self._handler_list = result
+		return moved_handlers
 	def swap_sentence_order(self, h1, h2):
 		i, j = self._handler_list.index(h1), self._handler_list.index(h2)
 		self._handler_list[i], self._handler_list[j] = self._handler_list[j], self._handler_list[i]
@@ -293,6 +295,10 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	def batch_decrement_sentence_order(self, handlers):
 		return self._batch_reorder_sentence_order(handlers, up = False)
 	def _batch_reorder_sentence_order(self, handlers, up):
+		index = self.batch_get_sentence_order(handlers)
+		moved_index = [i + (-1 if up else 1) for i in index]
+		return self.batch_set_sentence_order(handlers, moved_index)
+	def __deprecated_batch_reorder_sentence_order(self, handlers, up):
 		handlers = list(set(handlers))
 		d = {h: i for i, h in enumerate(self._handler_list)}
 		sorted_h_o_index_list = [(h, d[h], i) for i, h in enumerate(sorted(handlers, key = lambda n: d[n]))] #h o i
