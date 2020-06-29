@@ -415,7 +415,7 @@ class DialogueEditor(BaseEditor):
 		ori_d = {}
 		for handler in self._selection:
 			ori_d[handler] = self._scenario.dialogue[handler][key]
-			self._modify_info(handler, (s, ), (key, ), (tree_key, ), (tag_change, ))
+			self.modify_info(handler, (s, ), (key, ), (tree_key, ), (tag_change, ))
 		self.save_memento(action = 'ModifySelectedInfo', detail = {'key': key, 'before': ori_d, 'after': s})
 		'''
 		if self._selection and len(self._selection) == 1:
@@ -426,7 +426,7 @@ class DialogueEditor(BaseEditor):
 			if tag_change:
 				self.tree.item(handler, tags = var.get())
 		'''
-	def _modify_info(self, handler, contents, keys, tree_keys, tag_changes):
+	def modify_info(self, handler, contents, keys, tree_keys, tag_changes):
 		for content, key, tree_key, tag_change in zip(contents, keys, tree_keys, tag_changes):
 			self._scenario.dialogue[handler][key] = content
 			if tree_key:
@@ -599,10 +599,10 @@ class ReplaceTextMemento(DialogueEditorMemento):
 		self.ori_text = scenario.dialogue[self.handler]['text']
 		self.sol_text = self.ori_text.replace(' ', c, 1)
 	def execute(self):
-		self._editor._modify_info(self.handler, (self.sol_text, ), ('text', ), ('sentence', ), (False, ))
+		self._editor.modify_info(self.handler, (self.sol_text, ), ('text', ), ('sentence', ), (False, ))
 		self._editor.tree.selection_set(selection)
 	def rollback(self):
-		self._editor._modify_info(self.handler, (self.ori_text, ), ('text', ), ('sentence', ), (False, ))
+		self._editor.modify_info(self.handler, (self.ori_text, ), ('text', ), ('sentence', ), (False, ))
 		self._editor.tree.selection_set(selection)
 
 class MergeSetenceMemento(DialogueEditorMemento):
@@ -632,13 +632,13 @@ class MergeSetenceMemento(DialogueEditorMemento):
 		#key_info = ('up', pad, merge_into, selection) if up else ('down', pad, selection, merge_into)
 		chain = (base_text, selected_text) if up else (selected_text, base_text)
 		sol_text = self.pad.join(chain)
-		self._editor._modify_info(merge_into, (sol_text, ), ('text', ), ('sentence', ), (False, ))
+		self._editor.modify_info(merge_into, (sol_text, ), ('text', ), ('sentence', ), (False, ))
 
 		self._editor.tree.selection_set(merge_into)
 		self._editor.delete_text([selection])
 		self._editor.reorder_line_number()
 	def rollback(self):
-		self._editor._modify_info(self.merge_into, (self.base_text, ), ('text', ), ('sentence', ), (False, ))
+		self._editor.modify_info(self.merge_into, (self.base_text, ), ('text', ), ('sentence', ), (False, ))
 		self._restore_from_sentence_info(self.merged, self.merged_index, self._merged_info)
 		self.scenario.set_sentence_order(self.merged, self.merged_index)
 
@@ -720,7 +720,7 @@ class InjureSetenceMemento(DialogueEditorMemento):
 			dialogue = self._new_dialogue
 
 		for h in _editor.handlers:
-			self._modify_info(h, [dialogue[h]['speaker'], dialogue[h]['text']], ['speaker', 'text'], ['speaker', 'sentence'], [True, False])
+			self.modify_info(h, [dialogue[h]['speaker'], dialogue[h]['text']], ['speaker', 'text'], ['speaker', 'sentence'], [True, False])
 	@staticmethod
 	def injure_encode(editor) -> str:
 		l = []
