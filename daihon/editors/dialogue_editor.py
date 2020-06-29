@@ -377,25 +377,11 @@ class DialogueEditor(BaseEditor):
 		m = ReplaceTextMemento(self, self._scenario, c)
 		self.save_memento(m)
 	def _merge_text(self, mode, pad: str = ' '):
-		up = (mode == 'up')
-		selection = self._selection[0]
-		index = self.tree.index(selection)
-		if (up and index == 0) or ((not up) and index == len(self.tree.get_children()) - 1):
-			#marginal condition
+		try:
+			m = MergeSetenceMemento(self, self._scenario, mode, pad)
+		except:
 			return
-		merge_into_index = index - 1 if up else index + 1
-		merge_into = self.tree.get_children()[merge_into_index]
-
-		base_text, selected_text = self._scenario.dialogue[merge_into]['text'], self._scenario.dialogue[selection]['text']
-		key_info = ('up', pad, merge_into, selection) if up else ('down', pad, selection, merge_into)
-		before_info = (base_text, selected_text) if up else (selected_text, base_text)
-		sol_text = pad.join(before_info)
-		self._modify_info(merge_into, (sol_text, ), ('text', ), ('sentence', ), (False, ))
-
-		self.tree.selection_set(merge_into)
-		self._delete_text(selection)
-		self.reorder_line_number()
-		self.save_memento(action = 'MergeSentence', detail = {'key': key_info, 'before': before_info, 'after': sol_text})
+		self.save_memento(m)
 	def _delete_selected_text(self):
 		selection = self._selection
 		if not messagebox.askokcancel('確認', f'即將刪除 {str(len(selection))} 個句子\n確定要刪除嗎？'):
@@ -580,6 +566,11 @@ class DialogueEditorMemento(Memento):
 	def __init__(self, editor, scenario):
 		self._editor = editor
 		self._scenario = scenario
+	def _grab_sentence_info(self, handler):
+		return {'dialogue': self._scenario.dialogue[handler], 'tree': {info: self._editor.tree.item(handler)[info] for info in ('values', 'tags')}}
+	def _restore_from_sentence_info(self, handler, info):
+		self._scenario.insert_sentence(predefined_handler = handler, **info['dialogue'])
+		self._editor.tree.insert('', iid = handler, **info['tree'])
 
 class InsertSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, mode):
@@ -616,7 +607,7 @@ class InsertSetenceMemento(DialogueEditorMemento):
 			if mode == 'END': #optimize for END
 				editor.tree.insert('', 'end', iid = h, text = str(len(scenario.dialogue)), values = editor.columns_default, tags = '')
 			else:
-				editor.tree.insert('',  i, iid = h, values = editor.columns_default, tags = '')
+				editor.tree.insert('', i, iid = h, values = editor.columns_default, tags = '')
 
 		if mode == 'END':
 			#no need to set order
@@ -645,12 +636,45 @@ class ReplaceTextMemento(DialogueEditorMemento):
 
 class MergeSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, mode, pad):
-		pass
+		super().__init__(editor, scenario)
+		up = (mode == 'up')
+		selection = editor.selection[0]
+		index = editor.tree.index(selection)
+		if (up and index == 0) or ((not up) and index == len(scenario.dialogue) - 1):
+			#marginal condition
+			raise ValueError('Not valid merge')
+		merge_into_index = index - 1 if up else index + 1
+		merge_into = editor.tree.get_children()[merge_into_index]
+
+		self.up: bool = up
+		self.pad = pad
+		self.merged = selection
+		self.merged_index = index
+		self.merge_into = merge_into
+		self.base_text = scenario.dialogue[merge_into]['text']
+		self.merged_text = scenario.dialogue[merged]['text']
+		self._merged_info = self._grab_sentence_info(selection)
+	def execute(self):
+		merged, merge_into = self.merged, self.merge_into
+		up = self.up
+		base_text, selected_text = self.base_text, self.merged_text
+		#key_info = ('up', pad, merge_into, selection) if up else ('down', pad, selection, merge_into)
+		chain = (base_text, selected_text) if up else (selected_text, base_text)
+		sol_text = self.pad.join(chain)
+		self._editor._modify_info(merge_into, (sol_text, ), ('text', ), ('sentence', ), (False, ))
+
+		self._editor.tree.selection_set(merge_into)
+		self._editor._delete_text(selection)
+		self._editor.reorder_line_number()
+	def rollback(self):
+		self._editor._modify_info(self.merge_into, (self.base_text, ), ('text', ), ('sentence', ), (False, ))
+		self._restore_from_sentence_info(self.merged, self._merged_info)
+		self.scenario.set_sentence_order(self.merged, self.merged_index)
 
 class DeleteSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario):
 		super().__init__(editor, scenario)
-		self.handlers = {h: scenario.dialogue[h] for h in editor.selection}
+		self.handlers = {h: self._grab_sentence_info(h) for h in editor.selection}
 		self.index = scenario.batch_get_sentence_order(editor.selection)
 	def execute(self):
 		self._editor.tree.selection_remove(*self.handlers)
@@ -658,8 +682,8 @@ class DeleteSetenceMemento(DialogueEditorMemento):
 		self._editor.reorder_line_number()
 	def rollback(self):
 		for h in self.handlers:
-			scenario.insert_sentence(predefined_handler = h, **self.handlers[h])
-		scenario.batch_set_sentence_order(self.handlers.keys(), self.index)
+			self._restore_from_sentence_info(h, self.handlers[h])
+		self._scenario.batch_set_sentence_order(self.handlers.keys(), self.index)
 		self._editor.reorder_line_number()
 
 class MoveSetenceMemento(DialogueEditorMemento):
