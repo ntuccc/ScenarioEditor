@@ -16,7 +16,11 @@ class RestoreManager(Caretaker):
 		return m
 	@callbackmethod
 	def restore_pop(self):
-		m = self._l.pop()
+		try:
+			m = self._l.pop()
+		except IndexError:
+			#nothing to pop
+			raise NotRestorableError
 		try:
 			m.rollback()
 		except NotRestorableError as e:
