@@ -568,9 +568,10 @@ class DialogueEditorMemento(Memento):
 		self._scenario = scenario
 	def _grab_sentence_info(self, handler):
 		return {'dialogue': self._scenario.dialogue[handler], 'tree': {info: self._editor.tree.item(handler)[info] for info in ('values', 'tags')}}
-	def _restore_from_sentence_info(self, handler, info):
+	def _restore_from_sentence_info(self, handler, index, info):
+		#should called from up to down
 		self._scenario.insert_sentence(predefined_handler = handler, **info['dialogue'])
-		self._editor.tree.insert('', iid = handler, **info['tree'])
+		self._editor.tree.insert('', index, iid = handler, **info['tree'])
 
 class InsertSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, mode):
@@ -668,7 +669,7 @@ class MergeSetenceMemento(DialogueEditorMemento):
 		self._editor.reorder_line_number()
 	def rollback(self):
 		self._editor._modify_info(self.merge_into, (self.base_text, ), ('text', ), ('sentence', ), (False, ))
-		self._restore_from_sentence_info(self.merged, self._merged_info)
+		self._restore_from_sentence_info(self.merged, self.merged_index, self._merged_info)
 		self.scenario.set_sentence_order(self.merged, self.merged_index)
 
 class DeleteSetenceMemento(DialogueEditorMemento):
@@ -676,13 +677,15 @@ class DeleteSetenceMemento(DialogueEditorMemento):
 		super().__init__(editor, scenario)
 		self.handlers = {h: self._grab_sentence_info(h) for h in editor.selection}
 		self.index = scenario.batch_get_sentence_order(editor.selection)
+		self._handlers_order = sorted(zip(self.handlers, self.index), key = itemgetter(1))
 	def execute(self):
 		self._editor.tree.selection_remove(*self.handlers)
 		self._editor._delete_text(*self.handlers)
 		self._editor.reorder_line_number()
 	def rollback(self):
-		for h in self.handlers:
-			self._restore_from_sentence_info(h, self.handlers[h])
+		for h, i in self._handlers_order:
+			#restore from up to down
+			self._restore_from_sentence_info(h, i, self.handlers[h])
 		self._scenario.batch_set_sentence_order(self.handlers.keys(), self.index)
 		self._editor.reorder_line_number()
 
