@@ -1,5 +1,6 @@
 import tkinter as tk
 import re
+from copy import deepcopy
 from enum import Flag, auto
 from functools import partial, wraps
 from operator import itemgetter
@@ -388,7 +389,7 @@ class DialogueEditor(BaseEditor):
 			return
 		m = DeleteSetenceMemento(self, self._scenario)
 		self.save_memento(m)
-	def _delete_text(self, *handlers):
+	def delete_text(self, handlers):
 		self._scenario.delete_sentence(*handlers)
 		self.tree.delete(*handlers)
 	def reorder_line_number(self):
@@ -443,40 +444,11 @@ class DialogueEditor(BaseEditor):
 			h = f'"{self._select_all_combobox["value"][i]}"'
 			self.tree.selection_set(*self.tree.tag_has(h))
 	def _injure(self):
-		ori_text = self._injure_encode()
+		ori_text = InjureSetenceMemento.injure_encode(self)
 		a = InjureTextDialog(self, '編輯台詞', ori_text).result
 		if a is not None:
-			self.save_memento(action = 'injure', detail = {'key': None, 'before': ori_text, 'after': a})
-			self._injure_decode(a)
-	def _injure_encode(self) -> str:
-		l = []
-		i_s, i_t = self.columns['speaker']['order'], self.columns['sentence']['order']
-		for h in self.tree.get_children():
-			v = self.tree.item(h)['values']
-			print(v[i_t], v[i_s])
-			#this is a problem when v[i_s] is a full-width number
-			#I want a full-width number string, but it "automatically" turns it into an integer!
-			s = v[i_t] if len(str(v[i_s])) == 0 else f'{v[i_s]}{delimiter}{v[i_t]}'
-			l.append(s)
-		return '\n'.join(l)
-	def _injure_decode(self, s):
-		l = s.split('\n')
-		handlers = list(self.tree.get_children())
-		diff = len(l) - len(handlers)
-		if diff < 0:
-			self._delete_text(*handlers[len(l):])
-			handlers = handlers[:len(l)]
-		elif diff > 0:
-			for _ in range(diff):
-				h = self._insert_text()
-				handlers.append(h)
-		for s, handler in zip(l, handlers):
-			splits = re_delimiter.split(s, 1)
-			if len(splits) == 1 or len(splits[0]) == 0:
-				speaker, text = '', splits[-1]
-			else:
-				speaker, text = splits
-			self._modify_info(handler, [speaker, text], ['speaker', 'text'], ['speaker', 'sentence'], [True, False])
+			m = InjureSetenceMemento(self, self._scenario, a)
+			self.save_memento(m)
 	def _image(self):
 		ImageProcessDialog(self)
 	def load_scenario(self, scenario):
@@ -587,7 +559,7 @@ class InsertSetenceMemento(DialogueEditorMemento):
 		index = self.index
 
 		if self.handlers is None:
-			self.handlers = tuple(scenario.insert_sentence(**editor.defaultinfo) for _ in index)
+			self.handlers = self.new_sentence(len(index), scenario, editor.defaultinfo)
 		else:
 			for h in self.handlers:
 				scenario.insert_sentence(predefined_handler = h, **editor.defaultinfo)
@@ -607,9 +579,18 @@ class InsertSetenceMemento(DialogueEditorMemento):
 			editor.reorder_line_number()
 	def rollback(self):
 		self._editor.tree.selection_remove(*self.handlers)
-		self._editor._delete_text(*self.handlers)
+		self._editor.delete_text(self.handlers)
 		if self.mode != 'END':
 			self._editor.reorder_line_number()
+	@staticmethod
+	def new_sentence(n, scenario, defaultinfo, predefined_handlers = None):
+		'''
+		Provided API to insert n sentences into the scenario at the end
+		'''
+		if predefined_handlers is None:
+			return tuple(scenario.insert_sentence(**defaultinfo) for _ in range(n))
+		else:
+			return tuple(scenario.insert_sentence(predefined_handler = h, **defaultinfo) for _, h in zip(range(n), predefined_handlers))
 
 class ReplaceTextMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, c):
@@ -654,7 +635,7 @@ class MergeSetenceMemento(DialogueEditorMemento):
 		self._editor._modify_info(merge_into, (sol_text, ), ('text', ), ('sentence', ), (False, ))
 
 		self._editor.tree.selection_set(merge_into)
-		self._editor._delete_text(selection)
+		self._editor.delete_text([selection])
 		self._editor.reorder_line_number()
 	def rollback(self):
 		self._editor._modify_info(self.merge_into, (self.base_text, ), ('text', ), ('sentence', ), (False, ))
@@ -669,7 +650,7 @@ class DeleteSetenceMemento(DialogueEditorMemento):
 		self._handlers_order = sorted(zip(self.handlers, self.index), key = itemgetter(1))
 	def execute(self):
 		self._editor.tree.selection_remove(*self.handlers)
-		self._editor._delete_text(*self.handlers)
+		self._editor.delete_text(self.handlers)
 		self._editor.reorder_line_number()
 	def rollback(self):
 		for h, i in self._handlers_order:
@@ -711,7 +692,60 @@ class MoveSetenceMemento(DialogueEditorMemento):
 
 class InjureSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, s):
-		pass
+		super().__init__(editor, scenario)
+		self._l = s.split('\n')
+		self.diff = len(l) - len(scenario.dialogue)
+		self._changed_handlers = None
+		self._dialogue = deepcopy(scenario.dialogue)
+		self._new_dialogue = None
+	def execute(self):
+		self._injure(self.diff, self._new_dialogue)
+	def rollback(self):
+		self._injure(-self.diff, self._dialogue)
+	def _injure(self, diff, dialogue):
+		if diff < 0:
+			if self._changed_handlers is None:
+				self._changed_handlers = self._scenario.handlers[-self.diff:]
+			self._editor.tree.selection_remove(*self._changed_handlers)
+			self._editor.delete_text(self._changed_handlers)
+		elif diff > 0:
+			if self._changed_handlers is None:
+				self._changed_handlers = InsertSetenceMemento.new_sentence(self.diff, self._scenario, self._editor.defaultinfo)
+			else:
+				InsertSetenceMemento.new_sentence(self.diff, self._scenario, self._editor.defaultinfo, self._changed_handlers)
+
+		#on first call
+		if dialogue is None:
+			self._new_dialogue = self.injure_decode(self._l)
+			dialogue = self._new_dialogue
+
+		for h in _editor.handlers:
+			self._modify_info(h, [dialogue[h]['speaker'], dialogue[h]['text']], ['speaker', 'text'], ['speaker', 'sentence'], [True, False])
+	@staticmethod
+	def injure_encode(editor) -> str:
+		l = []
+		i_s, i_t = editor.columns['speaker']['order'], editor.columns['sentence']['order']
+		for h in editor.tree.get_children():
+			v = editor.tree.item(h)['values']
+			print(v[i_t], v[i_s])
+			#this is a problem when v[i_s] is a full-width number
+			#I want a full-width number string, but it "automatically" turns it into an integer!
+			s = v[i_t] if len(str(v[i_s])) == 0 else f'{v[i_s]}{delimiter}{v[i_t]}'
+			l.append(s)
+		return '\n'.join(l)
+	def injure_decode(self, l):
+		'''
+		Translate text to data
+		'''
+		result = {}
+		for h, s in zip(self._scenario.handlers, l):
+			splits = re_delimiter.split(s, 1)
+			if len(splits) == 1 or len(splits[0]) == 0:
+				speaker, text = '', splits[-1]
+			else:
+				speaker, text = splits
+			result[h] = {'speaker': speaker, 'text': text}
+		return result
 
 if __name__ == '__main__':
 	from scenario import Scenario
