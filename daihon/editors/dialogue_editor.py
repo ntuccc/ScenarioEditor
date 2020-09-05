@@ -53,12 +53,12 @@ class DialogueEditorView(BaseEditorView):
 	def _set_headings(self, columns):
 		self.tree.heading('#0', text = self.top_column['text']) #special case
 		for c in columns:
-			self.tree.heading(c, text = c['text'])
+			self.tree.heading(c, text = columns[c]['text'])
 	def _set_column_style(self, columns):
 		self.tree.column('#0', **self.top_column['colstyle']) #special case
 		for c in columns:
-			if c.get('colstyle', None) is not None:
-				self.tree.column(c, **c['colstyle'])
+			if columns[c].get('colstyle', None) is not None:
+				self.tree.column(c, **columns[c]['colstyle'])
 	def put_textedit_frame(self, frame):
 		'''
 		What input object is decided by controller
@@ -114,7 +114,7 @@ class DialogueEditor(BaseEditor):
 				'enable_state': _SelectState.select1,
 			}
 		}
-		self.columns_default = [d['default'] for d in sorted(self.columns.values(), itemgetter('order'))]
+		self.columns_default = [d['default'] for d in sorted(self.columns.values(), key = itemgetter('order'))]
 	def _init_textedit_frame(self):
 		'''
 		build content edit part along with columns information
@@ -281,7 +281,7 @@ class DialogueEditor(BaseEditor):
 	def _install_buttons(self):
 		for group in ('structural', 'merge', 'replace', 'image', 'test'):
 			self.view.build_buttons(group, self.buttons[group])
-			for button in self.buttons[group]:
+			for button in self.buttons[group]['buttons']:
 				self.state_tran_register(button['button'], button['enable_state'])
 	def _decorate_button_command(self):
 		for d in self.buttons.values():
@@ -316,7 +316,7 @@ class DialogueEditor(BaseEditor):
 
 		#self._sentence_edit_label['wraplength'] = self.winfo_width()
 
-		self.bind('<Configure>', self._onresize)
+		self.view.bind('<Configure>', self._onresize)
 	@property
 	def selection(self):
 		return self._selection
@@ -411,6 +411,8 @@ class DialogueEditor(BaseEditor):
 
 		self._last_state = state
 	def _modify_selected_info(self, var, key, tree_key, tag_change = False):
+		if self._selection is None:
+			return
 		s = var.get()
 		ori_d = {}
 		for handler in self._selection:

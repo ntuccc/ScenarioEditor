@@ -21,8 +21,8 @@ class Originator:
 		self._caretaker = c
 	def save_memento(self, m: Memento):
 		if hasattr(self, '_caretaker') and self._caretaker is not None:
-			self._caretaker.push(memento)
-		return memento
+			self._caretaker.push(m)
+		return m
 	'''
 	def save_memento(self, action: str, detail: dict):
 		memento = Memento(self, action, detail)

@@ -99,7 +99,7 @@ class InfoEditor(BaseEditor):
 	def _get_title(self):
 		return self._scenario.title
 	def _get_info(self, info):
-		reutrn self._scenario.other_info[info]
+		return self._scenario.other_info[info]
 	def _set_title(self, title):
 		self._scenario.title = title
 	def _set_info(self, info, value):
@@ -121,7 +121,7 @@ class InfoEditor(BaseEditor):
 		"""
 		only called when loading
 		"""
-		self.save_memento(LoadAdaptInfoMemento(self._scenario))
+		self.save_memento(LoadAdaptInfoMemento(self._scenario, self))
 
 class NoNeedApplyError(ValueError):
 	pass
@@ -146,10 +146,9 @@ class UpdateInfoMemento(Memento):
 			d['setter'](ori)
 
 class LoadAdaptInfoMemento(BaseLoadAdaptMemento):
-	def __init__(self, scenario):
+	def __init__(self, scenario, editor):
 		self.scenario = scenario
+		self.editor = editor
 	def execute(self):
-		self.changed = False
-		info = self._scenario.other_info
-		if self.expand_info(info) is True:
-			self.changed = True
+		info = self.scenario.other_info
+		self.editor.expand_info(info)
