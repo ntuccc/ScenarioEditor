@@ -393,20 +393,8 @@ class DialogueEditor(BaseEditor):
 		if self._selection is None:
 			return
 		s = var.get()
-		ori_d = {}
-		for handler in self._selection:
-			ori_d[handler] = self._scenario.dialogue[handler][key]
-			self.modify_info(handler, (s, ), (key, ), (tree_key, ), (tag_change, ))
-		self.save_memento(action = 'ModifySelectedInfo', detail = {'key': key, 'before': ori_d, 'after': s})
-		'''
-		if self._selection and len(self._selection) == 1:
-			handler = self._selection[0]
-			self._scenario.dialogue[handler][key] = var.get()
-			if tree_key:
-				self.tree.set(handler, tree_key, var.get())
-			if tag_change:
-				self.tree.item(handler, tags = var.get())
-		'''
+		m = ModifyInfoMemento(self, self._scenario, self._selection, s, key, tree_key, tag_change)
+		self.save_memento(m)
 	def modify_info(self, handler, contents, keys, tree_keys, tag_changes):
 		for content, key, tree_key, tag_change in zip(contents, keys, tree_keys, tag_changes):
 			self._scenario.dialogue[handler][key] = content
@@ -506,6 +494,23 @@ class DialogueEditorMemento(Memento):
 		#should called from up to down
 		self._scenario.insert_sentence(predefined_handler = handler, **info['dialogue'])
 		self._editor.tree.insert('', index, iid = handler, **info['tree'])
+
+class ModifyInfoMemento(DialogueEditorMemento):
+	def __init__(self, editor, scenario, selection, s, key, tree_key, tag_change):
+		super().__init__(editor, scenario)
+
+		self.selection = selection
+		self.new_content = s
+		self.key = key
+		self.tree_key = tree_key
+		self.tag_change = tag_change
+		self.ori_content = {scenario.dialogue[handler][key] for handler in selection}
+	def execute(self):
+		for handler in self.selection:
+			self._editor.modify_info(handler, (self.new_content, ), (self.key, ), (self.tree_key, ), (self.tag_change, ))
+	def rollback(self):
+		for handler in self.selection:
+			self._editor.modify_info(handler, (self.ori_content[handler], ), (self.key, ), (self.tree_key, ), (self.tag_change, ))
 
 class InsertSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, mode):
