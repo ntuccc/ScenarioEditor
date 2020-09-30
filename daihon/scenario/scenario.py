@@ -100,8 +100,12 @@ class DialogueDict(Mapping):
 class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	_handler_generator = staticmethod(lambda: ''.join(random.choices(string.ascii_uppercase + string.digits, k = 16)))
 	_base: str = 'gimi65536'
-	_version: str = '0.0.1'
+	_version: str = '0.0.2'
+	_default_macrosignal = ':::'
+	_default_macrosplit = '/'
 	def __init__(self):
+		self._macrosignal = _default_macrosignal
+		self._macrosplit = _default_macrosplit
 		self._title: str = ''
 		self._other_info: dict = {}
 		#self._character: Dict[str, dict] = fixed_defaultdict(dict)
@@ -125,6 +129,18 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	def version(self, i: str):
 		raise AttributeError("""The property 'version' in gimi65536's Scenario format is read-only.""")
 	@property
+	def macrosignal(self):
+		return self._macrosignal
+	@macrosignal.setter
+	def macrosignal(self, i: str):
+		self._macrosignal = i
+	@property
+	def macrosplit(self):
+		return self._macrosplit
+	@macrosplit.setter
+	def macrosplit(self, i: str):
+		self._macrosplit = i
+	@property
 	def title(self) -> str:
 		return self._title
 	@title.setter
@@ -135,6 +151,8 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		d = {
 			'Base': self.base,
 			'Version': self.version,
+			'MacroSignal': self._macrosignal,
+			'MacroSplit': self._macrosplit,
 			'Title': self.title,
 			'ScenarioInfo': self.other_info,
 			'Character': self._character,
@@ -147,11 +165,16 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		sol = cls()
 		if data['Base'] == 'gimi65536':
 			#version update
-			#now it is nothing to do
+			if 'MacroSignal' not in data:
+				data[MacroSignal] = _default_macrosignal
+			if 'MacroSplit' not in data:
+				data[MacroSplit] = _default_macrosplit
 			pass
 		else:
 			f, t = (data['Base'], data['Version']), (cls._base, cls._version)
 			data = transformers[f][t](data)
+		sol.macrosignal = data['MacroSignal']
+		sol.macrosplit = data["MacroSplit"]
 		sol.title = data['Title']
 		sol.other_info.update(data['ScenarioInfo'])
 		sol._character.update(data['Character'])
