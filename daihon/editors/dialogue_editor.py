@@ -12,9 +12,6 @@ from .memento import Memento
 from ..scenario.base import ScenarioWithCharacters, ScenarioWithDialogue
 from ..imageprocess.image_process_widget import ImageProcessFrame
 
-delimiter = '：'
-re_delimiter = re.compile('：|:')
-
 class _SelectState(Flag):
 	select0 = auto()
 	select1 = auto()
@@ -504,7 +501,7 @@ class ModifyInfoMemento(DialogueEditorMemento):
 		self.key = key
 		self.tree_key = tree_key
 		self.tag_change = tag_change
-		self.ori_content = {scenario.dialogue[handler][key] for handler in selection}
+		self.ori_content = {handler: scenario.dialogue[handler][key] for handler in selection}
 	def execute(self):
 		for handler in self.selection:
 			self._editor.modify_info(handler, (self.new_content, ), (self.key, ), (self.tree_key, ), (self.tag_change, ))
