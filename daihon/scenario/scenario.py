@@ -104,8 +104,8 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	_default_macrosignal = ':::'
 	_default_macrosplit = '/'
 	def __init__(self):
-		self._macrosignal = _default_macrosignal
-		self._macrosplit = _default_macrosplit
+		self._macrosignal = self._default_macrosignal
+		self._macrosplit = self._default_macrosplit
 		self._title: str = ''
 		self._other_info: dict = {}
 		#self._character: Dict[str, dict] = fixed_defaultdict(dict)
@@ -166,9 +166,9 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		if data['Base'] == 'gimi65536':
 			#version update
 			if 'MacroSignal' not in data:
-				data[MacroSignal] = _default_macrosignal
+				data[MacroSignal] = cls._default_macrosignal
 			if 'MacroSplit' not in data:
-				data[MacroSplit] = _default_macrosplit
+				data[MacroSplit] = cls._default_macrosplit
 			pass
 		else:
 			f, t = (data['Base'], data['Version']), (cls._base, cls._version)

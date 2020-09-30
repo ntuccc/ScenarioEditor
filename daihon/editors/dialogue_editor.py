@@ -490,13 +490,7 @@ class DialogueEditor(BaseEditor):
 		"""
 		only called when loading
 		"""
-		changed = False
-		for handler in self._scenario.handlers():
-			info = self._scenario.sentence_info(handler)
-			if self.expand_info(info) is True:
-				changed = True
-		if changed:
-			self.save_memento(action = 'LoadAdapt', detail = {})
+		self.save_memento(LoadAdaptdDialogueMemento(self._scenario, self))
 
 class InjureTextDialog(simpledialog.Dialog):
 	def __init__(self, parent, title, text):
@@ -748,6 +742,15 @@ class InjureSetenceMemento(DialogueEditorMemento):
 				speaker, text = splits
 			result[h] = {'speaker': speaker, 'text': text}
 		return result
+
+class LoadAdaptdDialogueMemento(BaseLoadAdaptMemento):
+	def __init__(self, scenario, editor):
+		self.scenario = scenario
+		self.editor = editor
+	def execute(self):
+		for handler in self.scenario.handlers():
+			info = self.scenario.sentence_info(handler)
+			self.editor.expand_info(info)
 
 if __name__ == '__main__':
 	from scenario import Scenario
