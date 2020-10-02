@@ -12,9 +12,6 @@ from .memento import Memento
 from ..scenario.base import ScenarioWithCharacters, ScenarioWithDialogue
 from ..imageprocess.image_process_widget import ImageProcessFrame
 
-delimiter = '：'
-re_delimiter = re.compile('：|:')
-
 class _SelectState(Flag):
 	select0 = auto()
 	select1 = auto()
@@ -40,7 +37,7 @@ class DialogueEditorView(BaseEditorView):
 
 		self.edit_frame.pack(pady = 10, expand = True, fill = tk.X)
 	def build_tree(self, columns):
-		displaycolumns = tuple(sorted(c for c in columns if columns[c]['display_order'] is not None))
+		displaycolumns = tuple(sorted((c for c in columns if columns[c]['display_order'] is not None), key = lambda c: columns[c]['display_order']))
 		self.tree = ttk.Treeview(self._tree_frame, columns = tuple(columns.keys()), displaycolumns = displaycolumns)
 		self.tree.pack(side = tk.LEFT, expand = True, fill = tk.BOTH)
 
@@ -67,18 +64,7 @@ class DialogueEditorView(BaseEditorView):
 		#frame.grid(row = 0, column = 0, sticky = 'nsew')
 		frame.pack()
 	def build_selectall(self):
-		frame = tk.Frame(self.edit_frame)
-
-		select_all_button = tk.Button(frame)
-		#self._select_all_var = tk.StringVar(frame)
-		select_all_combobox = ttk.Combobox(frame, style = 'DialogueEditor.TCombobox')
-
-		select_all_combobox.grid(row = 0, column = 0, sticky = 'nsew')
-		select_all_button.grid(row = 0, column = 1, sticky = 'nsew')
-
-		frame.pack()
-
-		return select_all_button, select_all_combobox
+		NotImplemented
 	def build_buttons(self, groupname, info):
 		frame = tk.Frame(self.edit_frame)
 
@@ -89,22 +75,29 @@ class DialogueEditorView(BaseEditorView):
 		frame.pack()
 
 class DialogueEditor(BaseEditor):
-	defaultinfo = {'text': '', 'speaker': ''}
+	defaultinfo = {'text': '', 'speaker': '', 'speaker_list': ''}
 	def _init_columns(self):
 		self.columns = {
 			"speaker": {
 				'order': 0, #0-based
 				'display_order': 0, #arbitrary based
+				'text': '顯示說話者',
+				'default': '',
+				'enable_state': _SelectState.select1 | _SelectState.select2,
+			},
+			"speaker_list": {
+				'order': 1,
+				'display_order': 1,
 				'text': '說話者',
 				'default': '',
 				'enable_state': _SelectState.select1 | _SelectState.select2,
 			},
-			"color": {
-				'order': 1,
-				'display_order': None, #not show
-				'text': '顏色',
-				'default': None,
-			},
+			#"color": {
+			#	'order': 2,
+			#	'display_order': None, #not show
+			#	'text': '顏色',
+			#	'default': None,
+			#},
 			"sentence": {
 				'order': 2,
 				'display_order': 1,
@@ -130,6 +123,11 @@ class DialogueEditor(BaseEditor):
 		self.state_tran_register(speaker_edit_combobox, self.columns['speaker']['enable_state'])
 		speaker_edit_var.trace_add('write', lambda *args: self._modify_selected_info(speaker_edit_var, 'speaker', 'speaker', tag_change = True))
 
+		assert 'speaker_list' in self.columns
+		speaker_list_command = self.condition_decorate(self.columns['speaker_list']['enable_state'], self._speaker_select)
+		speaker_list_button = tk.Button(context_edit_frame, text = f"{self.columns['speaker_list']['text']}", command = speaker_list_command)
+		self.state_tran_register(speaker_list_button, self.columns['speaker_list']['enable_state'])
+
 		assert 'sentence' in self.columns
 		sentence_edit_var = tk.StringVar(context_edit_frame)
 		sentence_edit_entry = tk.Entry(context_edit_frame, textvariable = sentence_edit_var, width = 30)
@@ -139,8 +137,9 @@ class DialogueEditor(BaseEditor):
 
 		speaker_edit_label.grid(row = 0, column = 0, sticky = 'nsew')
 		speaker_edit_combobox.grid(row = 0, column = 1, sticky = 'nsew')
-		sentence_edit_entry.grid(row = 0, column = 2, sticky = 'nsew')
-		sentence_edit_label.grid(row = 1, column = 2, sticky = 'nsew')
+		speaker_list_button.grid(row = 0, column = 2, sticky = 'nsew')
+		sentence_edit_entry.grid(row = 0, column = 3, sticky = 'nsew')
+		sentence_edit_label.grid(row = 1, column = 3, sticky = 'nsew')
 
 		self.view.put_textedit_frame(context_edit_frame)
 
@@ -150,14 +149,6 @@ class DialogueEditor(BaseEditor):
 		self._sentence_edit_var = sentence_edit_var
 		self._sentence_edit_entry = sentence_edit_entry
 		self._sentence_edit_label = sentence_edit_label
-	def _init_selectall(self):
-		btn, cbb = self.view.build_selectall()
-		btn.config(text = '全選', command = self._select_all)
-		cbb['values'] = ('(選擇角色以全選)', )
-		cbb.current(0)
-		cbb.state(['readonly'])
-
-		self._select_all_combobox = cbb #fetch info
 	def _init_buttons_info(self):
 		self.buttons = {
 			'structural': {
@@ -255,7 +246,7 @@ class DialogueEditor(BaseEditor):
 				'info': {},
 				'buttons': [
 					{
-						'text': '匯入台詞',
+						'text': '置換台詞',
 						'command': self._injure,
 						'enable_state': _SelectState.always,
 					},
@@ -277,16 +268,14 @@ class DialogueEditor(BaseEditor):
 				]
 			},
 		}
-		self._decorate_button_command()
+		for d in self.buttons.values():
+			for button in d['buttons']:
+				button['command'] = self.condition_decorate(button['enable_state'], button['command'])
 	def _install_buttons(self):
 		for group in ('structural', 'merge', 'replace', 'image', 'test'):
 			self.view.build_buttons(group, self.buttons[group])
 			for button in self.buttons[group]['buttons']:
 				self.state_tran_register(button['button'], button['enable_state'])
-	def _decorate_button_command(self):
-		for d in self.buttons.values():
-			for button in d['buttons']:
-				button['command'] = self.condition_decorate(button['enable_state'], button['command'])
 	def __init__(self, master, *args, **kwargs):
 		super().__init__(master, *args, viewClass = DialogueEditorView, **kwargs)
 
@@ -301,8 +290,6 @@ class DialogueEditor(BaseEditor):
 		self.view.build_tree(self.columns)
 
 		self._init_textedit_frame()
-
-		self._init_selectall()
 
 		self._init_buttons_info()
 		self._install_buttons()
@@ -371,6 +358,20 @@ class DialogueEditor(BaseEditor):
 		print(selection)
 	def _onresize(self, e = None):
 		self._sentence_edit_label['wraplength'] = self._sentence_edit_entry.winfo_width()
+	def _speaker_select(self):
+		selection = self._selection
+
+		speaker_list = None
+		for handler in selection:
+			if speaker_list is None:
+				speaker_list = set(self._scenario.dialogue[handler]['speaker_list'])
+			elif speaker_list != set(self._scenario.dialogue[handler]['speaker_list']):
+				speaker_list = None
+				break
+
+		a = SpeakerListDialog(self, self._scenario, speaker_list, '選擇說話者').result
+		if a is not None:
+			self.save_memento(ModifyInfoMemento(self, self._scenario, self._selection, a, 'speaker_list', 'speaker_list', False))
 	def _insert_text(self, mode = "END"):
 		m = InsertSetenceMemento(self, self._scenario, mode)
 		self.save_memento(m)
@@ -385,7 +386,7 @@ class DialogueEditor(BaseEditor):
 		self.save_memento(m)
 	def _delete_selected_text(self):
 		selection = self._selection
-		if not messagebox.askokcancel('確認', f'即將刪除 {str(len(selection))} 個句子\n確定要刪除嗎？'):
+		if not messagebox.askokcancel('確認', f'即將刪除 {len(selection)} 個句子\n確定要刪除嗎？'):
 			return
 		m = DeleteSetenceMemento(self, self._scenario)
 		self.save_memento(m)
@@ -414,40 +415,33 @@ class DialogueEditor(BaseEditor):
 		if self._selection is None:
 			return
 		s = var.get()
-		ori_d = {}
-		for handler in self._selection:
-			ori_d[handler] = self._scenario.dialogue[handler][key]
-			self.modify_info(handler, (s, ), (key, ), (tree_key, ), (tag_change, ))
-		self.save_memento(action = 'ModifySelectedInfo', detail = {'key': key, 'before': ori_d, 'after': s})
-		'''
-		if self._selection and len(self._selection) == 1:
-			handler = self._selection[0]
-			self._scenario.dialogue[handler][key] = var.get()
-			if tree_key:
-				self.tree.set(handler, tree_key, var.get())
-			if tag_change:
-				self.tree.item(handler, tags = var.get())
-		'''
+		m = ModifyInfoMemento(self, self._scenario, self._selection, s, key, tree_key, tag_change)
+		self.save_memento(m)
 	def modify_info(self, handler, contents, keys, tree_keys, tag_changes):
 		for content, key, tree_key, tag_change in zip(contents, keys, tree_keys, tag_changes):
 			self._scenario.dialogue[handler][key] = content
+			content_str = self.obj_to_str(content)
 			if tree_key:
-				self.tree.set(handler, tree_key, content)
+				self.tree.set(handler, tree_key, content_str)
 			if tag_change:
-				self.tree.item(handler, tags = (f'"{content}"', ))
+				self.tree.item(handler, tags = (f'"{content_str}"', ))
+	def obj_to_str(self, obj):
+		if isinstance(obj, str):
+			return obj
+		if isinstance(obj, list):
+			return self._scenario.macrosplit.join(self.obj_to_str(i) for i in obj)
+		if isinstance(obj, dict):
+			NotImplemented
+		return str(obj)
 	def _move_updown(self, up):
 		m = MoveSetenceMemento(self, self._scenario, up)
 		self.save_memento(m)
 	def _select_all(self):
-		i = self._select_all_combobox.current()
-		if i == 0:
-			self.tree.selection_set(*self.tree.get_children())
-		else:
-			h = f'"{self._select_all_combobox["value"][i]}"'
-			self.tree.selection_set(*self.tree.tag_has(h))
+		NotImplemented
 	def _injure(self):
-		ori_text = InjureSetenceMemento.injure_encode(self)
-		a = InjureTextDialog(self, '編輯台詞', ori_text).result
+		#ori_text = InjureSetenceMemento.injure_encode(self)
+		#a = InjureTextDialog(self, '編輯台詞', ori_text).result
+		a = InjureTextDialog(self.view, '置換台詞').result
 		if a is not None:
 			m = InjureSetenceMemento(self, self._scenario, a)
 			self.save_memento(m)
@@ -464,11 +458,12 @@ class DialogueEditor(BaseEditor):
 		for i, handler in enumerate(scenario.handlers()):
 			info = scenario.dialogue[handler]
 			speaker = info['speaker']
-			color = None
-			if speaker in scenario.character:
-				color = scenario.character[speaker]['color']
+			#color = None
+			#if speaker in scenario.character:
+			#	color = scenario.character[speaker]['color']
+			speaker_list_str = scenario.macrosplit.join(info['speaker_list'])
 			sentence = info['text']
-			self.tree.insert('', 'end', iid = handler, values = [speaker, color, sentence], tags = (f'"{speaker}"', ))
+			self.tree.insert('', 'end', iid = handler, values = [speaker, speaker_list_str, sentence], tags = (f'"{speaker}"', ))
 		self.reorder_line_number()
 		self.fetch_character_info([])
 	def _grab_character_order(self):
@@ -482,7 +477,6 @@ class DialogueEditor(BaseEditor):
 	def fetch_character_info(self, changes: list = None):
 		l = self._grab_character_order()
 		self._speaker_edit_combobox['value'] = ('', *l)
-		self._select_all_combobox['value'] = ('(選擇角色以全選)', *l)
 	def upload_to_scenario(self):
 		#self.tree.selection_remove(*self.tree.selection())
 		pass
@@ -492,14 +486,55 @@ class DialogueEditor(BaseEditor):
 		"""
 		self.save_memento(LoadAdaptdDialogueMemento(self._scenario, self))
 
+class SpeakerListDialog(simpledialog.Dialog):
+	def __init__(self, editor, scenario, speaker_list, title):
+		self.editor = editor
+		self.characters = [character for character in scenario.character]
+		self._ori_list = speaker_list
+		super().__init__(editor.view, title)
+	def body(self, master):
+		label = tk.Label(self, text = '選擇角色')
+		label.pack()
+
+		frame = tk.Frame(self)
+
+		scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL)
+		self._listbox = tk.Listbox(frame, selectmode = tk.EXTENDED, yscrollcommand=scrollbar.set)
+		scrollbar.config(command=self._listbox.yview)
+		scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+		self._listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+
+		for character in self.characters:
+			self._listbox.insert('END', character)
+
+		frame.pack()
+
+		if self._ori_list is not None:
+			for i in self._ori_list:
+				self._listbox.selection_set(i)
+	def buttonbox(self):
+		box = tk.Frame(self)
+
+		w = tk.Button(box, text = "確認", command=self.ok)
+		w.pack(side = tk.LEFT, padx = 5, pady = 5)
+		w = tk.Button(box, text="取消", command=self.cancel)
+		w.pack(side = tk.LEFT, padx = 5, pady = 5)
+
+		box.pack()
+	def apply(self):
+		self.result = [self.characters[i] for i in self._listbox.curselection()]
+
 class InjureTextDialog(simpledialog.Dialog):
-	def __init__(self, parent, title, text):
+	def __init__(self, parent, title, text = ''):
 		self.init_text = text
 		super().__init__(parent, title)
 	def body(self, master):
 		self._text = scrolledtext.ScrolledText(master)
 		self._text.insert('end', self.init_text)
 		self._text.pack()
+
+		label = tk.Label(self, text = '注意！按下確定即會將原本內容全部替換', fg = 'red')
+		label.pack()
 	def buttonbox(self):
 		box = tk.Frame(self)
 
@@ -529,6 +564,23 @@ class DialogueEditorMemento(Memento):
 		#should called from up to down
 		self._scenario.insert_sentence(predefined_handler = handler, **info['dialogue'])
 		self._editor.tree.insert('', index, iid = handler, **info['tree'])
+
+class ModifyInfoMemento(DialogueEditorMemento):
+	def __init__(self, editor, scenario, selection, s, key, tree_key, tag_change):
+		super().__init__(editor, scenario)
+
+		self.selection = selection
+		self.new_content = s
+		self.key = key
+		self.tree_key = tree_key
+		self.tag_change = tag_change
+		self.ori_content = {handler: scenario.dialogue[handler][key] for handler in selection}
+	def execute(self):
+		for handler in self.selection:
+			self._editor.modify_info(handler, (self.new_content, ), (self.key, ), (self.tree_key, ), (self.tag_change, ))
+	def rollback(self):
+		for handler in self.selection:
+			self._editor.modify_info(handler, (self.ori_content[handler], ), (self.key, ), (self.tree_key, ), (self.tag_change, ))
 
 class InsertSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, mode):
@@ -690,57 +742,32 @@ class InjureSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, s):
 		super().__init__(editor, scenario)
 		self._l = s.split('\n')
-		self.diff = len(l) - len(scenario.dialogue)
+		self.diff = len(self._l) - len(scenario.dialogue)
 		self._changed_handlers = None
 		self._dialogue = deepcopy(scenario.dialogue)
 		self._new_dialogue = None
 	def execute(self):
 		self._injure(self.diff, self._new_dialogue)
-	def rollback(self):
-		self._injure(-self.diff, self._dialogue)
 	def _injure(self, diff, dialogue):
 		if diff < 0:
-			if self._changed_handlers is None:
-				self._changed_handlers = self._scenario.handlers[-self.diff:]
+			self._changed_handlers = list(self._scenario.handlers())[-self.diff:]
 			self._editor.tree.selection_remove(*self._changed_handlers)
 			self._editor.delete_text(self._changed_handlers)
 		elif diff > 0:
-			if self._changed_handlers is None:
-				self._changed_handlers = InsertSetenceMemento.new_sentence(self.diff, self._scenario, self._editor.defaultinfo)
-			else:
-				InsertSetenceMemento.new_sentence(self.diff, self._scenario, self._editor.defaultinfo, self._changed_handlers)
+			ori_n = len(self._scenario.dialogue)
+			self._changed_handlers = InsertSetenceMemento.new_sentence(self.diff, self._scenario, self._editor.defaultinfo)
+			for i, h in enumerate(self._changed_handlers, 1):
+				self._editor.tree.insert('', 'end', iid = h, text = str(ori_n + i), values = self._editor.columns_default, tags = '')
 
 		#on first call
 		if dialogue is None:
 			self._new_dialogue = self.injure_decode(self._l)
 			dialogue = self._new_dialogue
 
-		for h in _editor.handlers:
-			self.modify_info(h, [dialogue[h]['speaker'], dialogue[h]['text']], ['speaker', 'text'], ['speaker', 'sentence'], [True, False])
-	@staticmethod
-	def injure_encode(editor) -> str:
-		l = []
-		i_s, i_t = editor.columns['speaker']['order'], editor.columns['sentence']['order']
-		for h in editor.tree.get_children():
-			v = editor.tree.item(h)['values']
-			print(v[i_t], v[i_s])
-			#this is a problem when v[i_s] is a full-width number
-			#I want a full-width number string, but it "automatically" turns it into an integer!
-			s = v[i_t] if len(str(v[i_s])) == 0 else f'{v[i_s]}{delimiter}{v[i_t]}'
-			l.append(s)
-		return '\n'.join(l)
+		for h in self._scenario.handlers():
+			self._editor.modify_info(h, [dialogue[h]['speaker'], dialogue[h]['text']], ['speaker', 'text'], ['speaker', 'sentence'], [True, False])
 	def injure_decode(self, l):
-		'''
-		Translate text to data
-		'''
-		result = {}
-		for h, s in zip(self._scenario.handlers, l):
-			splits = re_delimiter.split(s, 1)
-			if len(splits) == 1 or len(splits[0]) == 0:
-				speaker, text = '', splits[-1]
-			else:
-				speaker, text = splits
-			result[h] = {'speaker': speaker, 'text': text}
+		result = {h: {'speaker': '', 'text': s} for h, s in zip(self._scenario.handlers(), l)}
 		return result
 
 class LoadAdaptdDialogueMemento(BaseLoadAdaptMemento):
