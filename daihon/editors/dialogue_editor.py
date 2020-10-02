@@ -37,7 +37,7 @@ class DialogueEditorView(BaseEditorView):
 
 		self.edit_frame.pack(pady = 10, expand = True, fill = tk.X)
 	def build_tree(self, columns):
-		displaycolumns = tuple(sorted(c for c in columns if columns[c]['display_order'] is not None))
+		displaycolumns = tuple(sorted((c for c in columns if columns[c]['display_order'] is not None), key = lambda c: columns[c]['display_order']))
 		self.tree = ttk.Treeview(self._tree_frame, columns = tuple(columns.keys()), displaycolumns = displaycolumns)
 		self.tree.pack(side = tk.LEFT, expand = True, fill = tk.BOTH)
 
@@ -81,16 +81,23 @@ class DialogueEditor(BaseEditor):
 			"speaker": {
 				'order': 0, #0-based
 				'display_order': 0, #arbitrary based
+				'text': '顯示說話者',
+				'default': '',
+				'enable_state': _SelectState.select1 | _SelectState.select2,
+			},
+			"speaker_list": {
+				'order': 1,
+				'display_order': 1,
 				'text': '說話者',
 				'default': '',
 				'enable_state': _SelectState.select1 | _SelectState.select2,
 			},
-			"color": {
-				'order': 1,
-				'display_order': None, #not show
-				'text': '顏色',
-				'default': None,
-			},
+			#"color": {
+			#	'order': 2,
+			#	'display_order': None, #not show
+			#	'text': '顏色',
+			#	'default': None,
+			#},
 			"sentence": {
 				'order': 2,
 				'display_order': 1,
