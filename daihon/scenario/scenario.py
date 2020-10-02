@@ -165,11 +165,15 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		sol = cls()
 		if data['Base'] == 'gimi65536':
 			#version update
-			if 'MacroSignal' not in data:
-				data[MacroSignal] = cls._default_macrosignal
-			if 'MacroSplit' not in data:
-				data[MacroSplit] = cls._default_macrosplit
-			pass
+			if data['Version'] == '0.0.1':
+				data['MacroSignal'] = cls._default_macrosignal
+				data['MacroSplit'] = cls._default_macrosplit
+				data['Version'] = '0.0.2'
+
+			#newest
+			if data['Version'] != '0.0.2':
+				#error
+				pass
 		else:
 			f, t = (data['Base'], data['Version']), (cls._base, cls._version)
 			data = transformers[f][t](data)
