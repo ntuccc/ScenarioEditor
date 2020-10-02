@@ -160,7 +160,7 @@ class ScenarioEditor:
 				accelerator = ('' if i >= 10 else f'Ctrl+{i}')
 			)
 			if i < 10:
-				view.bind(f'<Control-{i}>', lambda _: partial_command(scenario = fm.scenario, filename = fm.filename))
+				view.bind(f'<Control-Key-{i}>', lambda _: partial_command(scenario = fm.scenario, filename = fm.filename))
 		view.menu_file.add_cascade(menu = extract_menu, label = '匯出')
 	def build_notebook(self):
 		view = self.view
