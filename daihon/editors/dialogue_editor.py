@@ -502,7 +502,7 @@ class SpeakerListDialog(simpledialog.Dialog):
 		self._listbox = tk.Listbox(frame, selectmode = tk.EXTENDED, yscrollcommand=scrollbar.set)
 		scrollbar.config(command=self._listbox.yview)
 		scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-		self._listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+		self._listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
 		for character in self.characters:
 			self._listbox.insert('END', character)
