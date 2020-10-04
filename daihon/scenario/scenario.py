@@ -1,5 +1,5 @@
 from __future__ import annotations
-from collections import defaultdict
+from collections import defaultdict, deque
 from io import IOBase
 from itertools import takewhile, dropwhile
 from typing import Optional, Dict, Tuple, Callable, Mapping, MutableMapping
@@ -284,7 +284,7 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 				d[o] = h
 		valid_h = set(d.values()) #O(h) amortized
 		#split
-		stay, move = [], [d[i] for i in sorted(d.keys())] #O(hlogh)
+		stay, move = deque([]), deque([d[i] for i in sorted(d.keys())]) #O(hlogh)
 		#O(N) amortized
 		for h in self._handler_list:
 			if h not in valid_h: #valid_h is hash set
@@ -296,9 +296,9 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		#O(N) amortized
 		for i in range(N):
 			if i not in d:
-				result.append(stay.pop())
+				result.append(stay.popleft())
 			else:
-				result.append(move.pop())
+				result.append(move.popleft())
 
 		self._handler_list = result
 		return moved_handlers
