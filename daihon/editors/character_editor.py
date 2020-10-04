@@ -1,16 +1,15 @@
 import tkinter as tk
 import warnings
+from functools import partial
 from itertools import count
-from tkinter import colorchooser, ttk
+from tkinter import colorchooser, ttk, messagebox
 from typing import Optional
 from warnings import warn
 
-from .new_character_dialog import NewCharacterFrame
-from .base import BaseEditor, EditorEvent
+from .base import BaseEditor, BaseEditorView, BaseLoadAdaptMemento
+from .memento import Memento
 
-from ..ast.linkedlist import listnode, linkedlist
 from ..scenario.base import ScenarioWithCharacters
-from ..utils.scrollableframe import VerticalScrolledFrame
 
 defaultcolor = '#ff0000'
 
@@ -20,175 +19,158 @@ additional_info = {
 	'cast': {'name': '聲優', 'width': 12, 'default': ''},
 }
 
-class CharacterFrame(tk.Frame):
-	def __init__(self, character_info: dict, *args, name = '', **kwargs):
-		grid_counter = count()
-		super().__init__(*args, **kwargs, class_ = 'CharacterFrame')
-		self._editor = self._grab_editor()
+class _Var:
+	def __init__(self, obj: tk.StringVar):
+		self.obj = obj
+	def get(self):
+		return self.obj.get()
+	def set(self, s):
+		self.obj.set(s)
+	def clear(self):
+		self.set('')
 
-		self.listnode: Optional[listnode[CharacterFrame]] = None
-		self._character_info = None
-		self._tmpname: Optional[str] = None
+class _Color_Var(_Var):
+	def __init__(self, obj: tk.Label, init):
+		self.obj = obj
+		self.color = init
+	def get(self):
+		return self.color
+	def set(self, s):
+		self.color = s
+		self.obj['bg'] = s
+	def clear(self):
+		self.set('#ffffff')
 
-		self._basedataframe = NewCharacterFrame(self)
-		self._basedataframe.name = name
-		self._basedataframe.grid(row = 0, column = next(grid_counter))
-
-		self._basedataframe.name_entry.bind('<FocusIn>', self._namefocusin)
-		self._basedataframe.name_entry.bind('<FocusOut>', self._namefocusout)
-		self._basedataframe.color_var.trace_add('write', self._onchange('color', self._basedataframe.color_var))
-
-		for n, d in additional_info.items():
-			frame = tk.Frame(self)
-			label = tk.Label(frame, text = d.get('name', ''))
-			label.grid(row = 0, column = 0)
-			string_var = tk.StringVar(frame)
-			setattr(self, f'_{n}_var', string_var)
-			entry = tk.Entry(frame, textvariable = string_var, width = d.get('width', 5))
-			setattr(self, f'_{n}_entry', entry)
-			entry.grid(row = 0, column = 1)
-			entry.bind('<FocusOut>', self._onchange(n, string_var))
-
-			frame.grid(row = 0, column = next(grid_counter), padx = 10)
-
-		'''
-		#abbreciated part
-		abbreviated_frame = tk.Frame(self)
-		abbreviated_label = tk.Label(abbreviated_frame, text = '簡稱')
-		abbreviated_label.grid(row = 0, column = 0)
-		self._abbreviated_var = tk.StringVar(abbreviated_frame)
-		self._abbreviated_entry = tk.Entry(abbreviated_frame, textvariable = self._abbreviated_var, width = 5)
-		self._abbreviated_entry.grid(row = 0, column = 1)
-
-		#this one is inefficient
-		#self._abbreviated_var.trace_add('write', self._onchange('abbreviated', self._abbreviated_var))
-		self._abbreviated_entry.bind('<FocusOut>', self._onchange('abbreviated', self._abbreviated_var))
-
-		abbreviated_frame.grid(row = 0, column = 1, padx = 10)
-
-		#gender part
-		gender_frame = tk.Frame(self)
-		gender_label = tk.Label(gender_frame, text = '性別')
-		gender_label.grid(row = 0, column = 0)
-		self._gender_var = tk.StringVar(gender_frame)
-		self._gender_entry = tk.Entry(gender_frame, textvariable = self._gender_var, width = 5)
-		self._gender_entry.grid(row = 0, column = 1)
-
-		gender_change_f = self._onchange('gender', self._gender_var)
-		self._gender_entry.bind('<FocusOut>', gender_change_f)
-
-		gender_frame.grid(row = 0, column = 2, padx = 10)
-		'''
-
-		if 'gender' in additional_info:
-			gender_change_f = self._onchange('gender', self._gender_var)
-			#gender change button
-			gender_change_frame = tk.Frame(self)
-			gender_to_boy = tk.Button(gender_change_frame, text = '男', command = (lambda: (self._gender_var.set('♂'), gender_change_f())))
-			gender_to_girl = tk.Button(gender_change_frame, text = '女', command = (lambda: (self._gender_var.set('♀'), gender_change_f())))
-			gender_to_boy.grid(row = 0, column = 0)
-			gender_to_girl.grid(row = 0, column = 1)
-
-			gender_change_frame.grid(row = 0, column = next(grid_counter), padx = 10)
-
-		#order change button
-		#order is post-updated. no Event fed
-		order_change_frame = tk.Frame(self)
-		order_increase = tk.Button(order_change_frame, text = '↑', command = (lambda: (self.namefocusin_check(), self._editor.move_order(self.listnode, 'up'))))
-		order_decrease = tk.Button(order_change_frame, text = '↓', command = (lambda: (self.namefocusin_check(), self._editor.move_order(self.listnode, 'down'))))
-		order_increase.grid(row = 0, column = 0)
-		order_decrease.grid(row = 0, column = 1)
-
-		order_change_frame.grid(row = 0, column = next(grid_counter), padx = 10)
-
-		...
-
-		#delete button
-		delete_button = tk.Button(self, text = 'X', command = lambda: self._editor.del_character(self.listnode))
-		delete_button.grid(row = 0, column = next(grid_counter), padx = 10)
-
-		self.character_info_modify(character_info)
-	def _onchange(self, info_key, var):
-		def f(*_):
-			if self._character_info:
-				self.namefocusin_check()
-				self._editor.save_memento(action = info_key, detail = {'key': self._tmpname or self.name, 'before': self._character_info[info_key], 'after': var.get()})
-				self._character_info[info_key] = var.get()
-		return f
-	def _namefocusin(self, e):
-		self._tmpname = self._basedataframe.name
-	def namefocusin_check(self):
-		if self._tmpname:
-			name = self._basedataframe.name
-			if len(name) >= 0 and self._editor.rename_character(self._tmpname, name):
-				#rename success
-				self._tmpname = name
-	def _namefocusout(self, e):
-		name = self._basedataframe.name
-		if len(name) == 0 or not self._editor.rename_character(self._tmpname, name):
-			#rename fail
-			self._basedataframe.name = self._tmpname
-		self._tmpname = None
-	def _grab_editor(self):
-		sol = self.master
-		while not isinstance(sol, BaseEditor) and sol is not None:
-			sol = sol.master
-		return sol
-	def destroy(self):
-		del self._basedataframe
-		del self._abbreviated_var
-		del self._abbreviated_entry
-		del self._gender_var
-		del self._gender_entry
-		self._character_info = None
-		super().destroy()
-	@property
-	def name(self):
-		return self._tmpname or self._basedataframe.name
-	@name.setter
-	def name(self, n):
-		self._basedataframe.name = n
-		if self._tmpname:
-			self._tmpname = n
-	def character_info_modify(self, character_info):
-		self._character_info = None #simply prevent triggering the trace callback
-		self._basedataframe.color = character_info['color']
-		self._abbreviated_var.set(character_info['abbreviated'])
-		self._gender_var.set(character_info['gender'])
-		...
-		self._character_info = character_info
-
-class CharacterEditor(BaseEditor, VerticalScrolledFrame):
-	defaultinfo = {n: d.get('default', '') for n, d in additional_info.items()}
+class CharacterEditorView(BaseEditorView):
 	def __init__(self, master, *args, **kwargs):
-		BaseEditor.__init__(self, master, *args, **kwargs, class_ = 'CharacterEditor')
-		VerticalScrolledFrame.__init__(self, master, *args, **kwargs, class_ = 'CharacterEditor')
-		self._charaframes_list: linkedlist[CharacterFrame] = linkedlist()
+		super().__init__(master, *args, **kwargs, class_ = 'CharacterEditor')
 
-		self._listframe = tk.Frame(self.interior)
-		self._listframe.pack()
+		self._list_frame = tk.Frame(self)
+		self._modify_frame = tk.Frame(self)
 
-		sep = ttk.Separator(self.interior, orient = 'horizontal')
-		sep.pack(fill = tk.X, pady = 10)
+		self._list_frame.pack(side = tk.LEFT, fill = tk.Y)
+		self._modify_frame.pack(side = tk.RIGHT, expand = True, anchor = 'nw')
 
-		self._inputframe = tk.Frame(self.interior)
-		self._inputframe.pack()
+		self.labelvars = {}
+		self.editvars = {}
 
-		self._newcharaframe = NewCharacterFrame(self._inputframe, defaultcolor = defaultcolor)
-		self._newcharaframe.grid(row = 0, column = 0, padx = 10)
+		self._enable = []
+	def build_list(self, add_command, del_command, up_command, down_command):
+		box_frame = tk.Frame(self._list_frame)
+		scrollbar = tk.Scrollbar(box_frame, orient=tk.VERTICAL)
+		self.listbox = tk.Listbox(box_frame, selectmode = tk.BROWSE, yscrollcommand=scrollbar.set, activestyle = tk.NONE)
+		scrollbar.config(command=self.listbox.yview)
+		scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+		self.listbox.pack(side=tk.LEFT, fill=tk.Y, expand=True)
+		box_frame.pack(side = tk.TOP, fill = tk.Y, expand = True)
 
-		newchara_button = tk.Button(self._inputframe, text = '增加角色', command = self.add_character)
-		newchara_button.grid(row = 0, column = 1, padx = 10)
+		button_frame = tk.Frame(self._list_frame)
+		add_button = tk.Button(button_frame, text = '新增', command = add_command)
+		del_button = tk.Button(button_frame, text = '刪除', command = del_command)
+		up_button = tk.Button(button_frame, text = '向上', command = up_command)
+		down_button = tk.Button(button_frame, text = '向下', command = down_command)
+		add_button.grid(row = 0, column = 0)
+		del_button.grid(row = 0, column = 1, padx = 10)
+		up_button.grid(row = 1, column = 0, pady = 10)
+		down_button.grid(row = 1, column = 1)
+		button_frame.pack()
 
-		test_button = tk.Button(self.interior, text = "test")
-		test_button['command'] = lambda: print(self._scenario.encode(indent = '\t'))
-		#test_button['command'] = lambda: (print(self._scenario.encode(indent = '\t')), print(repr(self._charaframes_list)))
-		#test_button['command'] = lambda:(self._charaframes_list.head.value._basedataframe.name_entry.__setitem__('state', tk.DISABLED))
-		#test_button['command'] = lambda: (self.upload_to_scenario(), print(self._scenario.encode(indent = '\t')))
-		test_button.pack()
+		self._enable.append(del_button)
+		self._enable.append(up_button)
+		self._enable.append(down_button)
+	def build_modification(self, info, command):
+		assert 'name' in info
+
+		for i in info:
+			d = info[i]
+			assert 'name' in d
+
+			frame = tk.Frame(self._modify_frame)
+			label = tk.Label(frame, text = d['name'])
+			label.grid(row = 0, column = 0, sticky = 'w')
+			modify_label = tk.Label(frame, text = f'編輯{d["name"]}')
+			modify_label.grid(row = 1, column = 0, pady = 2, sticky = 'w')
+
+			typeof = d.get('type', 'text')
+			if typeof == 'text':
+				labelvar = tk.StringVar(frame)
+				editvar = tk.StringVar(frame)
+
+				labeltext = tk.Label(frame, textvariable = labelvar)
+				entry = tk.Entry(frame, textvariable = editvar)
+
+				self._enable.append(entry)
+
+				labeltext.grid(row = 0, column = 1, sticky = 'w')
+				entry.grid(row = 1, column = 1, sticky = 'w')
+
+				self.labelvars[i] = _Var(labelvar)
+				self.editvars[i] = _Var(editvar)
+			elif typeof == 'color':
+				labeltext = tk.Label(frame, text = '　', bg = '#ffffff')
+				entry = tk.Label(frame, text = '　', bg = '#ffffff')
+
+				labelvar = _Color_Var(labeltext, '#ffffff')
+				editvar = _Color_Var(entry, '#ffffff')
+
+				labeltext.grid(row = 0, column = 1)
+				entry.grid(row = 1, column = 1)
+
+				button = tk.Button(frame, text = '挑選顏色', command = partial(self.colorchoose, editvar))
+				button.grid(row = 1, column = 2)
+				self._enable.append(button)
+
+				self.labelvars[i] = labelvar
+				self.editvars[i] = editvar
+			else:
+				NotImplemented
+			frame.pack(anchor = 'nw')
+		button = tk.Button(self._modify_frame, text = '更改', command = command)
+		self._enable.append(button)
+		button.pack(anchor = 'se')
+	def enable(self):
+		for i in self._enable:
+			i['state'] = tk.NORMAL
+	def disable(self):
+		for i in self._enable:
+			i['state'] = tk.DISABLED
+	def clear(self):
+		for var in self.labelvars.values():
+			var.clear()
+		for var in self.editvars.values():
+			var.clear()
+	@staticmethod
+	def colorchoose(color_var):
+		_, hx = colorchooser.askcolor()
+		if hx is not None:
+			color_var.set(hx)
+
+
+info = {
+	'name': {'name': '名稱', 'type': 'text', 'default': None},
+	'color': {'name': '顏色', 'type': 'color', 'default': '#ff0000'},
+	'gender': {'name': '簡稱', 'type': 'text', 'default': ''},
+	'abbreviated': {'name': '性別', 'type': 'text', 'default': ''},
+	'cast': {'name': '聲優', 'type': 'text', 'default': ''}
+}
+
+class CharacterEditor(BaseEditor):
+	defaultinfo = {n: d.get('default', '') for n, d in info.items() if n != 'name'}
+	def __init__(self, master, *args, **kwargs):
+		super().__init__(master, *args, viewClass = CharacterEditorView, **kwargs)
+		self.info = info
+
+		self._selection = None
+
+		self.view.build_list(self.add_character, self.del_character, partial(self.move_order, 'up'), partial(self.move_order, 'down'))
+		self.view.build_modification(info, self.modify_info)
+		self.view.disable()
+
+		self.listbox = self.view.listbox
+
+		self.listbox.bind('<<ListboxSelect>>', self._onselect)
 	def load_scenario(self, scenario: ScenarioWithCharacters):
 		self._scenario = scenario
-		#ori_frames_number = len(self._charaframes)
 		self._adapt_info()
 
 		characters = scenario.character
@@ -203,107 +185,89 @@ class CharacterEditor(BaseEditor, VerticalScrolledFrame):
 		order = sorted(chara_order.keys(), key = lambda n: chara_order[n])
 		order.extend(no_order_chara)
 
-		#reuse of frame
-		del_node = None
-		for node in self._charaframes_list:
-			if len(order) > 0:
-				name = order[0]
-				node.value.name = name
-				node.value.character_info_modify(scenario.character_info(name))
-				del order[0]
-			else:
-				del_node = node
-				break
-		if len(order) > 0:
-			#create node
-			for name in order:
-				self._add_chara_tail(name, scenario.character_info(name))
-		elif del_node:
-			while del_node is not None:
-				nextnode = del_node.next
-				self.destroy_node(self._charaframes_list, del_node)
-				del_node = nextnode
+		self.view.listbox.insert('end', *order)
+		self._adapt_order()
 	def upload_to_scenario(self):
 		"""
 		The only place where order updates
 		"""
-		for i, node in enumerate(self._charaframes_list):
-			self._scenario.character_info(node.value.name)['order'] = i
-
-		for chara_frame in self._listframe.winfo_children():
-			if chara_frame.winfo_class() == 'CharacterFrame':
-				chara_frame.namefocusin_check()
+		pass
+	def _onselect(self, *args):
+		if not self._scenario:
+			return
+		view = self.view
+		self._selection = None #do not trigger the trace of var
+		selection = self.listbox.curselection()
+		if len(selection) == 0:
+			self._selection = None
+			view.disable()
+			view.clear()
+		else:
+			name = self.listbox.get(selection[0])
+			self._selection = name
+			character_info = self._scenario.character_info(name)
+			for i in info:
+				s = None
+				if i == 'name':
+					s = name
+				else:
+					s = character_info[i]
+				view.labelvars[i].set(s)
+				view.editvars[i].set(s)
+			view.enable()
 	def _adapt_info(self):
 		"""
 		only called when loading
 		"""
-		changed = False
-		for name in self._scenario.character.keys():
-			info = self._scenario.character_info(name)
-			if self.expand_info(info) is True:
-				changed = True
-		if changed:
-			self.save_memento(action = 'LoadAdapt',  detail ={})
-	@staticmethod
-	def destroy_node(l, node):
-		print(455)
-		node.value.pack_forget()
-		node.value.destroy()
-		l.remove(node)
-	@classmethod
-	def expand_info(cls, character_info):
-		changed = False
-		if 'color' not in character_info:
-			character_info['color'] = defaultcolor
-			changed = True
-		changed = super().expand_info(character_info) or changed
-		return changed
+		self.save_memento(LoadAdaptdCharacterMemento(self, self._scenario))
+	def _adapt_order(self):
+		"""
+		only called when loading
+		"""
+		self.save_memento(LoadAdaptdCharacterOrderMemento(self, self._scenario))
 	def add_character(self):
 		if self._scenario is None:
 			warn("add_character() fails: no scenario loaded.", UserWarning)
 			return
-		name = self._newcharaframe.name
-		if len(name) == 0:
+
+		self.save_memento(NewCharacterMemento(self, self._scenario))
+	def del_character(self):
+		if self._selection is None:
 			return
-		elif name in self._scenario.character:
-			return
-		newinfo = {'color': self._newcharaframe.color}
-		self.expand_info(newinfo)
-
-		self._scenario.create_character(name, **newinfo)
-
-		self._add_chara_tail(name, self._scenario.character_info(name))
-		self._newcharaframe.name = ''
-
-		self.save_memento(action = 'NewChara', detail = {'key': name, 'before': name, 'after': name})
-	def _add_chara_tail(self, name, character_info) -> CharacterFrame:
-		newframe = CharacterFrame(master = self._listframe, name = name, character_info = character_info)
-		#newframe.name = name
-		newnode = listnode(value = newframe)
-		newframe.listnode = newnode
-		self._charaframes_list.append_tail(newnode)
-		newframe.pack()
-		return newframe
-	def del_character(self, node):
-		name = node.value.name
-		self.destroy_node(self._charaframes_list, node)
-		self._scenario.delete_character(name)
-		self.save_memento(action = 'DeleteChara', detail = {'key': name, 'before': name, 'after': None})
-	def move_order(self, node, mode):
+		name = self._selection
+		self.save_memento(DelCharacterMemento(self, self._scenario, name))
+	def move_order(self, mode):
 		if mode not in ('up', 'down'):
 			return
-		if mode == 'up':
-			if node.prev is None:
-				return
-			another = node.prev
-		else:
-			if node.next is None:
-				return
-			another = node.next
-		self.save_memento(action = 'MoveChara', detail = {'key': node.value.name, 'before': None, 'after': mode})
-		node.value.name, another.value.name = another.value.name, node.value.name
-		node.value.character_info_modify(self._scenario.character_info(node.value.name))
-		another.value.character_info_modify(self._scenario.character_info(another.value.name))
+		if self._selection is None:
+			return
+		name = self._selection
+		order = self._scenario.character_info(name)['order']
+		if mode == 'up' and order == 0:
+			return
+		if mode == 'down' and order == len(self._scenario.character) - 1:
+			return
+		self.save_memento(MoveCharacterMemento(self, self._scenario, name, mode))
+	def modify_info(self):
+		if self._selection is None:
+			return
+		name = self._selection
+		view = self.view
+
+		changed = False
+		for i in info:
+			if view.labelvars[i] != view.editvars[i]:
+				changed = True
+				break
+		if not changed:
+			return
+
+		if view.labelvars['name'].get() != view.editvars['name'].get():
+			if view.editvars['name'].get() in self._scenario.character:
+				messagebox.showwarning(title = '警告', message = '因為重名，對名字的更改將不會提交')
+				view.editvars['name'].set(view.labelvars['name'].get())
+
+		self.save_memento(ModifyCharacterInfoMemento(self, self._scenario, name))
 	def rename_character(self, n1, n2):
 		success = True
 		with warnings.catch_warnings():
@@ -315,6 +279,145 @@ class CharacterEditor(BaseEditor, VerticalScrolledFrame):
 		if success:
 			self.save_memento(action = 'RenameChara', detail = {'key': (n1, n2), 'before': n1, 'after': n2})
 		return success
+
+class CharacterEditorMemento(Memento):
+	def __init__(self, editor, scenario):
+		self._editor = editor
+		self._scenario = scenario
+
+class NewCharacterMemento(CharacterEditorMemento):
+	def __init__(self, editor, scenario):
+		super().__init__(editor, scenario)
+		self.newname = None
+		self.neworder = None
+	def execute(self):
+		if self.newname is None:
+			self.newname = self.name_generate()
+			self.neworder = self._editor.listbox.size()
+
+		self._editor.listbox.insert('end', self.newname)
+		self._scenario.create_character(self.newname, **self._editor.defaultinfo)
+		self._scenario.character_info(self.newname)['order'] = self.neworder
+	def rollback(self):
+		listbox = self._editor.listbox
+		listbox.delete(listbox.size() - 1)
+
+		self._scenario.delete_character(self.newname)
+	def name_generate(self):
+		for i in count(1):
+			n = f'未命名{i}'
+			if n not in self._scenario.character_names():
+				return n
+
+class DelCharacterMemento(CharacterEditorMemento):
+	def __init__(self, editor, scenario, name):
+		super().__init__(editor, scenario)
+		self.name = name
+		self.info = self._scenario.character_info(name)
+	def execute(self):
+		self._editor.listbox.delete(self.info['order'])
+		self._scenario.delete_character(self.name)
+
+		LoadAdaptdCharacterOrderMemento.refresh_order(self._editor.listbox, self._scenario)
+
+		self._editor._onselect() #<<ListboxSelect>> is not raised automatically, so call explicitly
+	def rollback(self):
+		self._editor.listbox.insert(self.info['order'], self.name)
+		self._scenario.create_character(self.name)
+		self._scenario.character_info(self.name).update(self.info)
+
+		LoadAdaptdCharacterOrderMemento.refresh_order(self._editor.listbox, self._scenario)
+
+class ModifyCharacterInfoMemento(CharacterEditorMemento):
+	def __init__(self, editor, scenario, name):
+		super().__init__(editor, scenario)
+		self.name = name
+		self.info = scenario.character_info(name).copy()
+		self.afterinfo = None
+		self.aftername = None
+	def execute(self):
+		if self.afterinfo is None:
+			self.afterinfo = self.info.copy()
+			self.afterinfo.update({i: self._editor.view.editvars[i].get() for i in info if i != 'name'})
+
+		self._scenario.character_info(self.name).update(self.afterinfo)
+
+		if self.aftername is None:
+			newname = self._editor.view.editvars['name'].get()
+			if self.name == newname:
+				self.aftername = False
+			else:
+				self.aftername = newname
+
+		if self.aftername:
+			# It is a coincidence to make the empty string not be a character name.
+			# However, I still use False to indicate that it is really nothing to change.
+			self.rename(self.name, self.aftername)
+
+	def rollback(self):
+		self._scenario.character_info(self.name).update(self.info)
+
+		if self.aftername:
+			self.rename(self.aftername, self.name)
+	def rename(self, n1, n2):
+		self._scenario.rename_character(n1, n2)
+		listbox = self._editor.listbox
+		order = self.info['order']
+		listbox.delete(order)
+		listbox.insert(order, n2)
+		listbox.selection_set(order)
+		self._editor._onselect() #<<ListboxSelect>> is not raised automatically, so call explicitly
+
+class MoveCharacterMemento(CharacterEditorMemento):
+	def __init__(self, editor, scenario, name, mode):
+		super().__init__(editor, scenario)
+		self.name = name
+		self.mode = mode
+		self.order = self._scenario.character_info(name)['order']
+		self.target = None
+	def execute(self):
+		listbox = self._editor.listbox
+		offset = -1 if self.mode == 'up' else +1
+		if self.target is None:
+			self.target = listbox.get(self.order + offset)
+
+		self.move(offset)
+	def rollback(self):
+		self.move(+1 if self.mode == 'up' else -1)
+	def move(self, offset):
+		listbox = self._editor.listbox
+		if self.target is None:
+			self.target = listbox.get(self.order + offset)
+
+		self._scenario.character_info(self.name)['order'] += offset
+		self._scenario.character_info(self.target)['order'] -= offset
+
+		listbox.delete(self.order + offset)
+		listbox.insert(self.order + offset, self.name)
+		listbox.delete(self.order)
+		listbox.insert(self.order, self.target)
+
+		listbox.selection_set(self.order + offset)
+
+class LoadAdaptdCharacterMemento(BaseLoadAdaptMemento):
+	def __init__(self, editor, scenario):
+		self.editor = editor
+		self.scenario = scenario
+	def execute(self):
+		for name in self.scenario.character.keys():
+			info = self.scenario.character_info(name)
+			self.expand_info(info)
+
+class LoadAdaptdCharacterOrderMemento(BaseLoadAdaptMemento):
+	def __init__(self, editor, scenario):
+		self.editor = editor
+		self.scenario = scenario
+	@staticmethod
+	def refresh_order(listbox, scenario):
+		for i, name in enumerate(listbox.get(0, 'end')):
+			scenario.character_info(name)['order'] = i
+	def execute(self):
+		self.refresh_order(self.editor.listbox, self.scenario)
 
 if __name__ == '__main__':
 	from scenario import Scenario

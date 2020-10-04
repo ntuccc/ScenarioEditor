@@ -429,7 +429,7 @@ class DialogueEditor(BaseEditor):
 		if isinstance(obj, str):
 			return obj
 		if isinstance(obj, list):
-			return self._scenario.macrosplit.join(self.obj_to_str(i) for i in obj)
+			return '/'.join(self.obj_to_str(i) for i in obj)
 		if isinstance(obj, dict):
 			NotImplemented
 		return str(obj)
@@ -461,7 +461,7 @@ class DialogueEditor(BaseEditor):
 			#color = None
 			#if speaker in scenario.character:
 			#	color = scenario.character[speaker]['color']
-			speaker_list_str = scenario.macrosplit.join(info['speaker_list'])
+			speaker_list_str = '/'.join(info['speaker_list'])
 			sentence = info['text']
 			self.tree.insert('', 'end', iid = handler, values = [speaker, speaker_list_str, sentence], tags = (f'"{speaker}"', ))
 		self.reorder_line_number()
@@ -484,7 +484,7 @@ class DialogueEditor(BaseEditor):
 		"""
 		only called when loading
 		"""
-		self.save_memento(LoadAdaptdDialogueMemento(self._scenario, self))
+		self.save_memento(LoadAdaptdDialogueMemento(self, self._scenario))
 
 class SpeakerListDialog(simpledialog.Dialog):
 	def __init__(self, editor, scenario, speaker_list, title):
@@ -502,7 +502,7 @@ class SpeakerListDialog(simpledialog.Dialog):
 		self._listbox = tk.Listbox(frame, selectmode = tk.EXTENDED, yscrollcommand=scrollbar.set)
 		scrollbar.config(command=self._listbox.yview)
 		scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-		self._listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+		self._listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
 		for character in self.characters:
 			self._listbox.insert('END', character)
@@ -771,9 +771,9 @@ class InjureSetenceMemento(DialogueEditorMemento):
 		return result
 
 class LoadAdaptdDialogueMemento(BaseLoadAdaptMemento):
-	def __init__(self, scenario, editor):
-		self.scenario = scenario
+	def __init__(self, editor, scenario):
 		self.editor = editor
+		self.scenario = scenario
 	def execute(self):
 		for handler in self.scenario.handlers():
 			info = self.scenario.sentence_info(handler)
