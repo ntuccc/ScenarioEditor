@@ -121,7 +121,7 @@ class InfoEditor(BaseEditor):
 		"""
 		only called when loading
 		"""
-		self.save_memento(LoadAdaptInfoMemento(self._scenario, self))
+		self.save_memento(LoadAdaptInfoMemento(self, self._scenario))
 
 class NoNeedApplyError(ValueError):
 	pass
@@ -146,9 +146,9 @@ class UpdateInfoMemento(Memento):
 			d['setter'](ori)
 
 class LoadAdaptInfoMemento(BaseLoadAdaptMemento):
-	def __init__(self, scenario, editor):
-		self.scenario = scenario
+	def __init__(self, editor, scenario):
 		self.editor = editor
+		self.scenario = scenario
 	def execute(self):
 		info = self.scenario.other_info
 		self.editor.expand_info(info)
