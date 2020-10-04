@@ -1,12 +1,13 @@
 {
 	"template": {
-		"filename": "template.tex",
+		"filename": "template5.tex",
 		"suffix": "tex",
 		"renderer": "jinja2",
 		"env_param": {
-			"block_start_string": "%{%",
-			"variable_start_string": "%{{",
-			"comment_start_string": "%{#"
+			"block_start_string": "{&",
+			"block_end_string": "&}",
+			"variable_start_string": "{|",
+			"variable_end_string": "|}"
 		}
 	},
 	"template2": {

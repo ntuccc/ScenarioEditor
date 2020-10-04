@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from importlib.resources import open_text, path as resource_path
 
+from .macro_processor import Processor
 from .. import templates
 
 class Extractor:
@@ -23,7 +24,7 @@ class Extractor:
 				setattr(self, f'_extract_env_{tname}', Environment(loader = FileSystemLoader(str(path)), extensions = [i18n, do, loopcontrols, with_], **info['env_param']))
 		template = getattr(self, f'_extract_env_{tname}').get_template(info['filename'])
 		with open(f'{Path(filename).stem}.{info["suffix"]}', 'w', encoding = 'utf-8') as file:
-			file.write(template.render({'scenario': scenario}))
+			file.write(template.render({'scenario': scenario, 'MacroProcessor': Processor}))
 	def _extract_with_docxtpl(self, tname, scenario, filename):
 		from jinja2 import Environment
 		from jinja2.ext import i18n, do, loopcontrols, with_

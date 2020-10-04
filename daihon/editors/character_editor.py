@@ -139,8 +139,8 @@ class CharacterEditorView(BaseEditorView):
 info = {
 	'name': {'name': '名稱', 'type': 'text', 'default': None},
 	'color': {'name': '顏色', 'type': 'color', 'default': '#ff0000'},
-	'gender': {'name': '簡稱', 'type': 'text', 'default': ''},
-	'abbreviated': {'name': '性別', 'type': 'text', 'default': ''},
+	'abbreviated': {'name': '簡稱', 'type': 'text', 'default': ''},
+	'gender': {'name': '性別', 'type': 'text', 'default': ''},
 	'cast': {'name': '聲優', 'type': 'text', 'default': ''}
 }
 
@@ -344,11 +344,14 @@ class ModifyCharacterInfoMemento(CharacterEditorMemento):
 			# However, I still use False to indicate that it is really nothing to change.
 			self.rename(self.name, self.aftername)
 
+		self._editor._onselect()
 	def rollback(self):
 		self._scenario.character_info(self.name).update(self.info)
 
 		if self.aftername:
 			self.rename(self.aftername, self.name)
+
+		self._editor._onselect()
 	def rename(self, n1, n2):
 		self._scenario.rename_character(n1, n2)
 		listbox = self._editor.listbox
@@ -356,7 +359,6 @@ class ModifyCharacterInfoMemento(CharacterEditorMemento):
 		listbox.delete(order)
 		listbox.insert(order, n2)
 		listbox.selection_set(order)
-		self._editor._onselect() #<<ListboxSelect>> is not raised automatically, so call explicitly
 
 class MoveCharacterMemento(CharacterEditorMemento):
 	def __init__(self, editor, scenario, name, mode):
@@ -396,7 +398,7 @@ class LoadAdaptdCharacterMemento(BaseLoadAdaptMemento):
 	def execute(self):
 		for name in self.scenario.character.keys():
 			info = self.scenario.character_info(name)
-			self.expand_info(info)
+			self.editor.expand_info(info)
 
 class LoadAdaptdCharacterOrderMemento(BaseLoadAdaptMemento):
 	def __init__(self, editor, scenario):
