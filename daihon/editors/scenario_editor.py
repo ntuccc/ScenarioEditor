@@ -153,14 +153,13 @@ class ScenarioEditor:
 
 		extract_menu = tk.Menu(view.menu_file)
 		for i, tname in enumerate(ex.templates, 1):
-			partial_command = partial(self.extract_file, tname = tname)
 			extract_menu.add_command(
 				label = tname,
-				command = lambda: partial_command(scenario = fm.scenario, filename = fm.filename),
+				command = (lambda tname=tname: self.extract_file(tname = tname, scenario = fm.scenario, filename = fm.filename)),
 				accelerator = ('' if i >= 10 else f'Ctrl+{i}')
 			)
 			if i < 10:
-				view.bind(f'<Control-Key-{i}>', lambda _: partial_command(scenario = fm.scenario, filename = fm.filename))
+				view.bind(f'<Control-Key-{i}>', (lambda _, tname=tname: self.extract_file(tname = tname, scenario = fm.scenario, filename = fm.filename)))
 		view.menu_file.add_cascade(menu = extract_menu, label = '匯出')
 	def build_notebook(self):
 		view = self.view

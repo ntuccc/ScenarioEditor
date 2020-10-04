@@ -1,17 +1,11 @@
 \documentclass{vadscript}
 
-{# Render the gimi65536's scenario with version >= 0.0.2 #}
-{& set processor = MacroProcessor(scenario.macrosignal, scenario.macrosplit) &}
+{#- Render the gimi65536's scenario with version >= 0.0.2 #}
+{&- set processor = MacroProcessor(scenario.macrosignal, scenario.macrosplit) &}
 
 \begin{document}
 
-\gentitle{
-	{| scenario.other_info['index'] |}
-}{
-	{| scenario.other_info['date'] |}
-}{
-	{| scenario.title |}
-}
+\gentitle{{| scenario.other_info['index'] |}}{{| scenario.other_info['date'] |}}{{| scenario.title |}}
 
 \begin{myfigure}[blanker]
 {& if scenario.other_info['image']|length == 0 &}
@@ -21,29 +15,30 @@
 
 %\setstretch{1.0}
 {&- for handler in scenario.handlers() &}
-{&- if scenario.dialogue[handler]['speaker'] in scenario.character &}
-\begin{sentence}{{| scenario.character[scenario.dialogue[handler]['speaker']]['abbreviated'] |}}%
-{&- elif scenario.dialogue[handler]['speaker']|length > 0 &}
-\begin{sentence}{{| scenario.dialogue[handler]['speaker'] |}}%
+{&- with s = processor(scenario.dialogue[handler]['speaker']), clist = scenario.dialogue[handler]['speaker_list']|select('in', scenario.character) &}
+{&- if scenario.dialogue[handler]['speaker']|length == 0 &}
+{#  #}{&- if scenario.dialogue[handler]['speaker_list']|count == 0 &}
+{#        #}\begin{sentence}{}
+{#  #}{&- else &}
+{#        #}\begin{sentence}{{| clist|join('、') |}}[{| clist|join(',') |}] {# reject names not in characters #}
+{#  #}{&- endif &}
 {&- else &}
-\begin{sentence}{}%
+{#  #}{&- if s|count == 1 and s[0].get_type == 'none' &}
+{#        #}\begin{sentence}{}
+{#  #}{&- else &}
+{#        #}\begin{sentence}{{| scenario.dialogue[handler]['speaker'] |}}[{| clist|join(',') |}]
+{#  #}{&- endif &}
 {&- endif &}
-{| scenario.dialogue[handler]['text'] }}
+{&- endwith &}
+{|- scenario.dialogue[handler]['text'] |}
 \end{sentence}
-{& endfor &}
+{&- endfor &}
 
 {& for name, info in scenario.character.items()|sort(attribute = '1.order') &}
-\addchara{
-	{| name |}
-}{
-	{| info['abbreviated'] |}
-}{
-	{| info['gender'] |}
-}
+\addchara{{| name |}}{{| info['abbreviated'] |}}{{| info['gender'] |},{| info['cast'] |}}
 {& endfor &}
 
 \writecast
 
-\picturepadding{{| scenario.other_info['imagelist'] |}
-}
+\picturepadding{{| scenario.other_info['imagelist'] |}}
 \end{document}

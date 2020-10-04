@@ -46,7 +46,7 @@ class Processor:
 		split = re.escape(split)
 		self.sentence_regex = re.compile(fR'{signal}\s*(.*?)\s*{signal}')
 		self.macro_regex = re.compile(split)
-	def __call__(s: str):
+	def __call__(self, s: str):
 		l = self.sentence_regex.split(s)
 		result = []
 		for i, text in enumerate(l):
@@ -55,6 +55,8 @@ class Processor:
 					result.append(_Plaintext(text))
 			else:
 				result.append(self.macro_process(text))
+		if len(result) == 0:
+			result.append(_Plaintext(''))
 		return result
 	def macro_process(s: str):
 		l = self.macro_regex.split(s)
