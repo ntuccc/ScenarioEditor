@@ -67,11 +67,17 @@ class CharacterEditorView(BaseEditorView):
 		button_frame = tk.Frame(self._list_frame)
 		add_button = tk.Button(button_frame, text = '新增', command = add_command)
 		del_button = tk.Button(button_frame, text = '刪除', command = del_command)
+		up_button = tk.Button(button_frame, text = '向上', command = up_command)
+		down_button = tk.Button(button_frame, text = '向下', command = down_command)
 		add_button.grid(row = 0, column = 0)
 		del_button.grid(row = 0, column = 1, padx = 10)
+		up_button.grid(row = 1, column = 0, pady = 10)
+		down_button.grid(row = 1, column = 1)
 		button_frame.pack()
 
 		self._enable.append(del_button)
+		self._enable.append(up_button)
+		self._enable.append(down_button)
 	def build_modification(self, info, command):
 		assert 'name' in info
 
@@ -156,7 +162,7 @@ class CharacterEditor(BaseEditor):
 
 		self._selection = None
 
-		self.view.build_list(self.add_character, self.del_character, (lambda: NotImplemented), (lambda: NotImplemented))
+		self.view.build_list(self.add_character, self.del_character, partial(self.move_order, 'up'), partial(self.move_order, 'down'))
 		self.view.build_modification(info, (lambda: NotImplemented))
 		self.view.disable()
 
@@ -233,6 +239,15 @@ class CharacterEditor(BaseEditor):
 	def move_order(self, mode):
 		if mode not in ('up', 'down'):
 			return
+		if self._selection is None:
+			return
+		name = self._selection
+		order = self._scenario.character_info(name)['order']
+		if mode == 'up' and order == 0:
+			return
+		if mode == 'down' and order == len(self._scenario.character) - 1:
+			return
+		self.save_memento(MoveCharacterMemento(self, self._scenario, name, mode))
 	def rename_character(self, n1, n2):
 		success = True
 		with warnings.catch_warnings():
@@ -292,6 +307,37 @@ class DelCharacterMemento(CharacterEditorMemento):
 		self._scenario.character_info(self.name).update(self.info)
 
 		LoadAdaptdCharacterOrderMemento.refresh_order(self._editor.listbox, self._scenario)
+
+class MoveCharacterMemento(CharacterEditorMemento):
+	def __init__(self, editor, scenario, name, mode):
+		super().__init__(editor, scenario)
+		self.name = name
+		self.mode = mode
+		self.order = self._scenario.character_info(name)['order']
+		self.target = None
+	def execute(self):
+		listbox = self._editor.listbox
+		offset = -1 if self.mode == 'up' else +1
+		if self.target is None:
+			self.target = listbox.get(self.order + offset)
+
+		self.move(offset)
+	def rollback(self):
+		self.move(+1 if self.mode == 'up' else -1)
+	def move(self, offset):
+		listbox = self._editor.listbox
+		if self.target is None:
+			self.target = listbox.get(self.order + offset)
+
+		self._scenario.character_info(self.name)['order'] += offset
+		self._scenario.character_info(self.target)['order'] -= offset
+
+		listbox.delete(self.order + offset)
+		listbox.insert(self.order + offset, self.name)
+		listbox.delete(self.order)
+		listbox.insert(self.order, self.target)
+
+		listbox.selection_set(self.order + offset)
 
 class LoadAdaptdCharacterMemento(BaseLoadAdaptMemento):
 	def __init__(self, editor, scenario):
