@@ -1,23 +1,13 @@
 import tkinter as tk
-import warnings
 from functools import partial
 from itertools import count
-from tkinter import colorchooser, ttk, messagebox
+from tkinter import colorchooser, messagebox
 from typing import Optional
-from warnings import warn
 
 from .base import BaseEditor, BaseEditorView, BaseLoadAdaptMemento
 from .memento import Memento
 
 from ..scenario.base import ScenarioWithCharacters
-
-defaultcolor = '#ff0000'
-
-additional_info = {
-	'abbreviated': {'name': '簡稱', 'width': 5, 'default': ''},
-	'gender': {'name': '性別', 'width': 5, 'default': '♀'},
-	'cast': {'name': '聲優', 'width': 12, 'default': ''},
-}
 
 class _Var:
 	def __init__(self, obj: tk.StringVar):
