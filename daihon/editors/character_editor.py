@@ -2,7 +2,7 @@ import tkinter as tk
 import warnings
 from functools import partial
 from itertools import count
-from tkinter import colorchooser, ttk
+from tkinter import colorchooser, ttk, messagebox
 from typing import Optional
 from warnings import warn
 
@@ -163,7 +163,7 @@ class CharacterEditor(BaseEditor):
 		self._selection = None
 
 		self.view.build_list(self.add_character, self.del_character, partial(self.move_order, 'up'), partial(self.move_order, 'down'))
-		self.view.build_modification(info, (lambda: NotImplemented))
+		self.view.build_modification(info, self.modify_info)
 		self.view.disable()
 
 		self.listbox = self.view.listbox
@@ -248,6 +248,26 @@ class CharacterEditor(BaseEditor):
 		if mode == 'down' and order == len(self._scenario.character) - 1:
 			return
 		self.save_memento(MoveCharacterMemento(self, self._scenario, name, mode))
+	def modify_info(self):
+		if self._selection is None:
+			return
+		name = self._selection
+		view = self.view
+
+		changed = False
+		for i in info:
+			if view.labelvars[i] != view.editvars[i]:
+				changed = True
+				break
+		if not changed:
+			return
+
+		if view.labelvars['name'].get() != view.editvars['name'].get():
+			if view.editvars['name'].get() in self._scenario.character:
+				messagebox.showwarning(title = '警告', message = '因為重名，對名字的更改將不會提交')
+				view.editvars['name'].set(view.labelvars['name'].get())
+
+		self.save_memento(ModifyCharacterInfoMemento(self, self._scenario, name))
 	def rename_character(self, n1, n2):
 		success = True
 		with warnings.catch_warnings():
@@ -307,6 +327,46 @@ class DelCharacterMemento(CharacterEditorMemento):
 		self._scenario.character_info(self.name).update(self.info)
 
 		LoadAdaptdCharacterOrderMemento.refresh_order(self._editor.listbox, self._scenario)
+
+class ModifyCharacterInfoMemento(CharacterEditorMemento):
+	def __init__(self, editor, scenario, name):
+		super().__init__(editor, scenario)
+		self.name = name
+		self.info = scenario.character_info(name).copy()
+		self.afterinfo = None
+		self.aftername = None
+	def execute(self):
+		if self.afterinfo is None:
+			self.afterinfo = self.info.copy()
+			self.afterinfo.update({i: self._editor.view.editvars[i].get() for i in info if i != 'name'})
+
+		self._scenario.character_info(self.name).update(self.afterinfo)
+
+		if self.aftername is None:
+			newname = self._editor.view.editvars['name'].get()
+			if self.name == newname:
+				self.aftername = False
+			else:
+				self.aftername = newname
+
+		if self.aftername:
+			# It is a coincidence to make the empty string not be a character name.
+			# However, I still use False to indicate that it is really nothing to change.
+			self.rename(self.name, self.aftername)
+
+	def rollback(self):
+		self._scenario.character_info(self.name).update(self.info)
+
+		if self.aftername:
+			self.rename(self.aftername, self.name)
+	def rename(self, n1, n2):
+		self._scenario.rename_character(n1, n2)
+		listbox = self._editor.listbox
+		order = self.info['order']
+		listbox.delete(order)
+		listbox.insert(order, n2)
+		listbox.selection_set(order)
+		self._editor._onselect() #<<ListboxSelect>> is not raised automatically, so call explicitly
 
 class MoveCharacterMemento(CharacterEditorMemento):
 	def __init__(self, editor, scenario, name, mode):
