@@ -180,12 +180,12 @@ class CharacterEditor(BaseEditor):
 		order.extend(no_order_chara)
 
 		self.view.listbox.insert('end', *order)
+		self._adapt_order()
 	def upload_to_scenario(self):
 		"""
 		The only place where order updates
 		"""
-		for i, name in enumerate(self.view.listbox.get(0, 'end')):
-			self._scenario.character_info(name)['order'] = i
+		pass
 	def _onselect(self, *args):
 		if not self._scenario:
 			return
@@ -214,31 +214,25 @@ class CharacterEditor(BaseEditor):
 		only called when loading
 		"""
 		self.save_memento(LoadAdaptdCharacterMemento(self, self._scenario))
+	def _adapt_order(self):
+		"""
+		only called when loading
+		"""
+		self.save_memento(LoadAdaptdCharacterOrderMemento(self, self._scenario))
 	def add_character(self):
 		if self._scenario is None:
 			warn("add_character() fails: no scenario loaded.", UserWarning)
 			return
 
 		self.save_memento(NewCharacterMemento(self, self._scenario))
-	def del_character(self, node):
-		name = node.value.name
-		self._scenario.delete_character(name)
-		self.save_memento(action = 'DeleteChara', detail = {'key': name, 'before': name, 'after': None})
-	def move_order(self, node, mode):
+	def del_character(self):
+		if self._selection is None:
+			return
+		name = self._selection
+		self.save_memento(DelCharacterMemento(self, self._scenario, name))
+	def move_order(self, mode):
 		if mode not in ('up', 'down'):
 			return
-		if mode == 'up':
-			if node.prev is None:
-				return
-			another = node.prev
-		else:
-			if node.next is None:
-				return
-			another = node.next
-		self.save_memento(action = 'MoveChara', detail = {'key': node.value.name, 'before': None, 'after': mode})
-		node.value.name, another.value.name = another.value.name, node.value.name
-		node.value.character_info_modify(self._scenario.character_info(node.value.name))
-		another.value.character_info_modify(self._scenario.character_info(another.value.name))
 	def rename_character(self, n1, n2):
 		success = True
 		with warnings.catch_warnings():
@@ -260,12 +254,15 @@ class NewCharacterMemento(CharacterEditorMemento):
 	def __init__(self, editor, scenario):
 		super().__init__(editor, scenario)
 		self.newname = None
+		self.neworder = None
 	def execute(self):
 		if self.newname is None:
 			self.newname = self.name_generate()
+			self.neworder = self._editor.listbox.size()
 
 		self._editor.listbox.insert('end', self.newname)
 		self._scenario.create_character(self.newname, **self._editor.defaultinfo)
+		self._scenario.character_info(self.newname)['order'] = self.neworder
 	def rollback(self):
 		listbox = self._editor.listbox
 		listbox.delete(listbox.size() - 1)
@@ -277,6 +274,25 @@ class NewCharacterMemento(CharacterEditorMemento):
 			if n not in self._scenario.character_names():
 				return n
 
+class DelCharacterMemento(CharacterEditorMemento):
+	def __init__(self, editor, scenario, name):
+		super().__init__(editor, scenario)
+		self.name = name
+		self.info = self._scenario.character_info(name)
+	def execute(self):
+		self._editor.listbox.delete(self.info['order'])
+		self._scenario.delete_character(self.name)
+
+		LoadAdaptdCharacterOrderMemento.refresh_order(self._editor.listbox, self._scenario)
+
+		self._editor._onselect() #<<ListboxSelect>> is not raised automatically, so call explicitly
+	def rollback(self):
+		self._editor.listbox.insert(self.info['order'], self.name)
+		self._scenario.create_character(self.name)
+		self._scenario.character_info(self.name).update(self.info)
+
+		LoadAdaptdCharacterOrderMemento.refresh_order(self._editor.listbox, self._scenario)
+
 class LoadAdaptdCharacterMemento(BaseLoadAdaptMemento):
 	def __init__(self, editor, scenario):
 		self.editor = editor
@@ -285,6 +301,17 @@ class LoadAdaptdCharacterMemento(BaseLoadAdaptMemento):
 		for name in self.scenario.character.keys():
 			info = self.scenario.character_info(name)
 			self.expand_info(info)
+
+class LoadAdaptdCharacterOrderMemento(BaseLoadAdaptMemento):
+	def __init__(self, editor, scenario):
+		self.editor = editor
+		self.scenario = scenario
+	@staticmethod
+	def refresh_order(listbox, scenario):
+		for i, name in enumerate(listbox.get(0, 'end')):
+			scenario.character_info(name)['order'] = i
+	def execute(self):
+		self.refresh_order(self.editor.listbox, self.scenario)
 
 if __name__ == '__main__':
 	from scenario import Scenario
