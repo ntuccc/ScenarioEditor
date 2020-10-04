@@ -160,18 +160,18 @@ class ScenarioEditor:
 				accelerator = ('' if i >= 10 else f'Ctrl+{i}')
 			)
 			if i < 10:
-				view.bind(f'<Control-{i}>', lambda _: partial_command(scenario = fm.scenario, filename = fm.filename))
+				view.bind(f'<Control-Key-{i}>', lambda _: partial_command(scenario = fm.scenario, filename = fm.filename))
 		view.menu_file.add_cascade(menu = extract_menu, label = '匯出')
 	def build_notebook(self):
 		view = self.view
 		rm = self.rm
 
-		self._c_editor = CharacterEditor(view)
-		self._d_editor = DialogueEditor(view)
-		self._i_editor = InfoEditor(view)
-		view.notebook.add(self._c_editor, text = '角色編輯')
-		view.notebook.add(self._d_editor, text = '台詞編輯')
-		view.notebook.add(self._i_editor, text = '台本資訊編輯')
+		self._c_editor = CharacterEditor(master = view)
+		self._d_editor = DialogueEditor(master = view)
+		self._i_editor = InfoEditor(master = view)
+		view.notebook.add(self._c_editor.view, text = '角色編輯')
+		view.notebook.add(self._d_editor.view, text = '台詞編輯')
+		view.notebook.add(self._i_editor.view, text = '台本資訊編輯')
 
 		self._c_editor.set_caretaker(rm)
 		self._d_editor.set_caretaker(rm)

@@ -9,15 +9,20 @@ class RestoreManager(Caretaker):
 		self._l = []
 	@callbackmethod
 	def push(self, m):
+		m.execute()
 		if len(self._l) >= self._MAXIMUM:
 			self._l.pop()
 		self._l.append(m)
 		return m
 	@callbackmethod
 	def restore_pop(self):
-		m = self._l.pop()
 		try:
-			m.executor.restore_from_memento(m)
+			m = self._l.pop()
+		except IndexError:
+			#nothing to pop
+			raise NotRestorableError
+		try:
+			m.rollback()
 		except NotRestorableError as e:
 			self._l.append(m)
 			raise e

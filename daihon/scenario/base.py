@@ -123,7 +123,7 @@ class ScenarioWithCharactersOrdered(ScenarioWithCharacters):
 
 class ScenarioWithDialogue(metaclass = ABCMeta):
 	@abstractmethod
-	def insert_sentence(self, text, **kwargs):
+	def insert_sentence(self, text, predefined_handler = None, **kwargs):
 		# return a handler
 		raise NotImplementedError
 	@abstractmethod
@@ -151,6 +151,12 @@ class ScenarioWithDialogue(metaclass = ABCMeta):
 		raise NotImplementedError
 	@abstractmethod
 	def set_sentence_order(self, handler, neworder):
+		raise NotImplementedError
+	@abstractmethod
+	def batch_get_sentence_order(self, handlers):
+		raise NotImplementedError
+	@abstractmethod
+	def batch_set_sentence_order(self, handlers, neworders):
 		raise NotImplementedError
 	@abstractmethod
 	def swap_sentence_order(self, h1, h2):

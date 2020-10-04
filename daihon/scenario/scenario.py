@@ -100,8 +100,12 @@ class DialogueDict(Mapping):
 class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	_handler_generator = staticmethod(lambda: ''.join(random.choices(string.ascii_uppercase + string.digits, k = 16)))
 	_base: str = 'gimi65536'
-	_version: str = '0.0.1'
+	_version: str = '0.0.2'
+	_default_macrosignal = ':::'
+	_default_macrosplit = '/'
 	def __init__(self):
+		self._macrosignal = self._default_macrosignal
+		self._macrosplit = self._default_macrosplit
 		self._title: str = ''
 		self._other_info: dict = {}
 		#self._character: Dict[str, dict] = fixed_defaultdict(dict)
@@ -125,6 +129,18 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	def version(self, i: str):
 		raise AttributeError("""The property 'version' in gimi65536's Scenario format is read-only.""")
 	@property
+	def macrosignal(self):
+		return self._macrosignal
+	@macrosignal.setter
+	def macrosignal(self, i: str):
+		self._macrosignal = i
+	@property
+	def macrosplit(self):
+		return self._macrosplit
+	@macrosplit.setter
+	def macrosplit(self, i: str):
+		self._macrosplit = i
+	@property
 	def title(self) -> str:
 		return self._title
 	@title.setter
@@ -135,6 +151,8 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		d = {
 			'Base': self.base,
 			'Version': self.version,
+			'MacroSignal': self._macrosignal,
+			'MacroSplit': self._macrosplit,
 			'Title': self.title,
 			'ScenarioInfo': self.other_info,
 			'Character': self._character,
@@ -147,11 +165,20 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		sol = cls()
 		if data['Base'] == 'gimi65536':
 			#version update
-			#now it is nothing to do
-			pass
+			if data['Version'] == '0.0.1':
+				data['MacroSignal'] = cls._default_macrosignal
+				data['MacroSplit'] = cls._default_macrosplit
+				data['Version'] = '0.0.2'
+
+			#newest
+			if data['Version'] != '0.0.2':
+				#error
+				pass
 		else:
 			f, t = (data['Base'], data['Version']), (cls._base, cls._version)
 			data = transformers[f][t](data)
+		sol.macrosignal = data['MacroSignal']
+		sol.macrosplit = data["MacroSplit"]
 		sol.title = data['Title']
 		sol.other_info.update(data['ScenarioInfo'])
 		sol._character.update(data['Character'])
@@ -202,8 +229,11 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	def character_names(self):
 		return iter(self._character.keys())
 
-	def insert_sentence(self, text, **kwargs):
-		handler = self._handler_generator()
+	def insert_sentence(self, text, predefined_handler = None, **kwargs):
+		if predefined_handler is None:
+			handler = self._handler_generator()
+		else:
+			handler = predefined_handler
 		while handler in self._dialogue:
 			handler = self._handler_generator()
 		self._dialogue[handler].update(text = text, info = kwargs)
@@ -235,6 +265,43 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	def set_sentence_order(self, handler, neworder):
 		self._handler_list.remove(handler)
 		self._handler_list.insert(neworder, handler)
+	def batch_get_sentence_order(self, handlers):
+		'''
+		Maybe O(|_handler_list|) amortized, better than loop calling get
+		'''
+		reverse_index = {handlers: i for i, handlers in enumerate(self._handler_list)}
+		return [reverse_index[h] for h in handlers]
+	def batch_set_sentence_order(self, handlers, neworders):
+		'''
+		Let N be |_handler_list| and h be |handlers|
+		neworders: list of integers between 0 and N - 1
+		'''
+		N = len(self._handler_list)
+		d = {}
+		#build valid table, O(h) amortized
+		for h, o in zip(handlers, neworders):
+			if o >= 0 and o < N and o not in d:
+				d[o] = h
+		valid_h = set(d.values()) #O(h) amortized
+		#split
+		stay, move = [], [d[i] for i in sorted(d.keys())] #O(hlogh)
+		#O(N) amortized
+		for h in _handler_list:
+			if h not in valid_h: #valid_h is hash set
+				stay.append(h)
+		moved_handlers = move.copy()
+
+		#intersect
+		result = []
+		#O(N) amortized
+		for i in range(N):
+			if i not in d:
+				result.append(stay.pop())
+			else:
+				result.append(move.pop())
+
+		self._handler_list = result
+		return moved_handlers
 	def swap_sentence_order(self, h1, h2):
 		i, j = self._handler_list.index(h1), self._handler_list.index(h2)
 		self._handler_list[i], self._handler_list[j] = self._handler_list[j], self._handler_list[i]
@@ -255,6 +322,10 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	def batch_decrement_sentence_order(self, handlers):
 		return self._batch_reorder_sentence_order(handlers, up = False)
 	def _batch_reorder_sentence_order(self, handlers, up):
+		index = self.batch_get_sentence_order(handlers)
+		moved_index = [i + (-1 if up else 1) for i in index]
+		return self.batch_set_sentence_order(handlers, moved_index)
+	def __deprecated_batch_reorder_sentence_order(self, handlers, up):
 		handlers = list(set(handlers))
 		d = {h: i for i, h in enumerate(self._handler_list)}
 		sorted_h_o_index_list = [(h, d[h], i) for i, h in enumerate(sorted(handlers, key = lambda n: d[n]))] #h o i
