@@ -58,12 +58,12 @@ class Processor:
 		if len(result) == 0:
 			result.append(_Plaintext(''))
 		return result
-	def macro_process(s: str):
+	def macro_process(self, s: str):
 		l = self.macro_regex.split(s)
 		keyword = l[0].lower() #case-insensitive
 
 		args = l[1:]
-		for m in macro:
+		for m in self.macro:
 			if m['keyword'] == keyword:
 				if len(args) not in m['accept_args']:
 					raise MacroError(f'{keyword} expects {m["accept_args"]} arguments, got {len(args)}.')

@@ -286,7 +286,7 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		#split
 		stay, move = [], [d[i] for i in sorted(d.keys())] #O(hlogh)
 		#O(N) amortized
-		for h in _handler_list:
+		for h in self._handler_list:
 			if h not in valid_h: #valid_h is hash set
 				stay.append(h)
 		moved_handlers = move.copy()

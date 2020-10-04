@@ -30,7 +30,18 @@
 {#  #}{&- endif &}
 {&- endif &}
 {&- endwith &}
-{|- scenario.dialogue[handler]['text'] |}
+{&- with s = processor(scenario.dialogue[handler]['text']) -&}
+{&- for macroblock in s -&}
+{#  #}{&- if macroblock.get_type() == 'none' -&}
+{#  #}{&- elif macroblock.get_type() == 'plaintext' -&}
+{#        #}{| macroblock.get_param() |}
+{#  #}{&- elif macroblock.get_type() == 'separate' -&}
+{#        #}{&- if macroblock.get_param()|count == 0 &}\ruleline{& else &}\ruleline[{| macroblock.get_param()[0] |}]{& endif &}
+{#  #}{&- elif macroblock.get_type() == 'ruby' -&}
+{#        #}\ruby{{| macroblock.get_param()[0] |}}{{| macroblock.get_param()[1] |}}
+{#  #}{&- endif -&}
+{&- endfor -&}
+{&- endwith -&}
 \end{sentence}
 {&- endfor &}
 
