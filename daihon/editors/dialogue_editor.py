@@ -75,7 +75,7 @@ class DialogueEditorView(BaseEditorView):
 		frame.pack()
 
 class DialogueEditor(BaseEditor):
-	defaultinfo = {'text': '', 'speaker': '', 'speaker_list': ''}
+	defaultinfo = {'text': '', 'speaker': '', 'speaker_list': []}
 	def _init_columns(self):
 		self.columns = {
 			"speaker": {
@@ -151,6 +151,16 @@ class DialogueEditor(BaseEditor):
 		self._sentence_edit_label = sentence_edit_label
 	def _init_buttons_info(self):
 		self.buttons = {
+			'select': {
+				'info': {},
+				'buttons': [
+					{
+						'text': '選擇指定台詞',
+						'command': self._select_all,
+						'enable_state': _SelectState.always,
+					}
+				]
+			},
 			'structural': {
 				'info': {},
 				'buttons': [
@@ -272,7 +282,7 @@ class DialogueEditor(BaseEditor):
 			for button in d['buttons']:
 				button['command'] = self.condition_decorate(button['enable_state'], button['command'])
 	def _install_buttons(self):
-		for group in ('structural', 'merge', 'replace', 'image', 'test'):
+		for group in ('select', 'structural', 'merge', 'replace', 'image'):
 			self.view.build_buttons(group, self.buttons[group])
 			for button in self.buttons[group]['buttons']:
 				self.state_tran_register(button['button'], button['enable_state'])
@@ -381,7 +391,8 @@ class DialogueEditor(BaseEditor):
 	def _merge_text(self, mode, pad: str = ' '):
 		try:
 			m = MergeSetenceMemento(self, self._scenario, mode, pad)
-		except:
+		except Exception as e:
+			print(e)
 			return
 		self.save_memento(m)
 	def _delete_selected_text(self):
@@ -437,13 +448,15 @@ class DialogueEditor(BaseEditor):
 		m = MoveSetenceMemento(self, self._scenario, up)
 		self.save_memento(m)
 	def _select_all(self):
-		NotImplemented
+		a = SelectAllDialog(self, self._scenario, '選擇').result
+		if a is not None:
+			self.tree.selection_set(*a)
 	def _injure(self):
 		#ori_text = InjureSetenceMemento.injure_encode(self)
 		#a = InjureTextDialog(self, '編輯台詞', ori_text).result
 		a = InjureTextDialog(self.view, '置換台詞').result
 		if a is not None:
-			m = InjureSetenceMemento(self, self._scenario, a)
+			m = InjureSetenceMemento(self, self._scenario, a, '：|:')
 			self.save_memento(m)
 	def _image(self):
 		ImageProcessDialog(self)
@@ -499,13 +512,13 @@ class SpeakerListDialog(simpledialog.Dialog):
 		frame = tk.Frame(self)
 
 		scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL)
-		self._listbox = tk.Listbox(frame, selectmode = tk.EXTENDED, yscrollcommand=scrollbar.set)
+		self._listbox = tk.Listbox(frame, selectmode = tk.EXTENDED, yscrollcommand=scrollbar.set, activestyle = tk.NONE, exportselection = False)
 		scrollbar.config(command=self._listbox.yview)
 		scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 		self._listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
 		for character in self.characters:
-			self._listbox.insert('END', character)
+			self._listbox.insert('end', character)
 
 		frame.pack()
 
@@ -523,6 +536,35 @@ class SpeakerListDialog(simpledialog.Dialog):
 		box.pack()
 	def apply(self):
 		self.result = [self.characters[i] for i in self._listbox.curselection()]
+
+class SelectAllDialog(simpledialog.Dialog):
+	def __init__(self, editor, scenario, title):
+		self.editor = editor
+		self.scenario = scenario
+		super().__init__(editor.view, title)
+	def body(self, master):
+		frame = tk.Frame(self)
+
+		label = tk.Label(frame, text = '顯示說話者名稱')
+		self.entry_var = tk.StringVar(frame)
+		entry = tk.Entry(frame, textvariable = self.entry_var)
+		label.grid(row = 0, column = 0)
+		entry.grid(row = 0, column = 1)
+
+		frame.pack()
+	def buttonbox(self):
+		box = tk.Frame(self)
+
+		w = tk.Button(box, text = "確認", command=self.ok)
+		w.pack(side = tk.LEFT, padx = 5, pady = 5)
+		w = tk.Button(box, text="取消", command=self.cancel)
+		w.pack(side = tk.LEFT, padx = 5, pady = 5)
+
+		box.pack()
+	def apply(self):
+		s = self.entry_var.get()
+		scenario = self.scenario
+		self.result = [h for h in scenario.handlers() if scenario.dialogue[h]['speaker'] == s]
 
 class InjureTextDialog(simpledialog.Dialog):
 	def __init__(self, parent, title, text = ''):
@@ -648,10 +690,10 @@ class ReplaceTextMemento(DialogueEditorMemento):
 		self.sol_text = self.ori_text.replace(' ', c, 1)
 	def execute(self):
 		self._editor.modify_info(self.handler, (self.sol_text, ), ('text', ), ('sentence', ), (False, ))
-		self._editor.tree.selection_set(selection)
+		self._editor.tree.selection_set(self.handler)
 	def rollback(self):
 		self._editor.modify_info(self.handler, (self.ori_text, ), ('text', ), ('sentence', ), (False, ))
-		self._editor.tree.selection_set(selection)
+		self._editor.tree.selection_set(self.handler)
 
 class MergeSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario, mode, pad):
@@ -671,7 +713,7 @@ class MergeSetenceMemento(DialogueEditorMemento):
 		self.merged_index = index
 		self.merge_into = merge_into
 		self.base_text = scenario.dialogue[merge_into]['text']
-		self.merged_text = scenario.dialogue[merged]['text']
+		self.merged_text = scenario.dialogue[self.merged]['text']
 		self._merged_info = self._grab_sentence_info(selection)
 	def execute(self):
 		merged, merge_into = self.merged, self.merge_into
@@ -683,12 +725,12 @@ class MergeSetenceMemento(DialogueEditorMemento):
 		self._editor.modify_info(merge_into, (sol_text, ), ('text', ), ('sentence', ), (False, ))
 
 		self._editor.tree.selection_set(merge_into)
-		self._editor.delete_text([selection])
+		self._editor.delete_text([merged])
 		self._editor.reorder_line_number()
 	def rollback(self):
 		self._editor.modify_info(self.merge_into, (self.base_text, ), ('text', ), ('sentence', ), (False, ))
 		self._restore_from_sentence_info(self.merged, self.merged_index, self._merged_info)
-		self.scenario.set_sentence_order(self.merged, self.merged_index)
+		self._scenario.set_sentence_order(self.merged, self.merged_index)
 
 class DeleteSetenceMemento(DialogueEditorMemento):
 	def __init__(self, editor, scenario):
@@ -739,13 +781,14 @@ class MoveSetenceMemento(DialogueEditorMemento):
 			tree.move(h, '', index_after)
 
 class InjureSetenceMemento(DialogueEditorMemento):
-	def __init__(self, editor, scenario, s):
+	def __init__(self, editor, scenario, s, split_pattern = None):
 		super().__init__(editor, scenario)
 		self._l = s.split('\n')
 		self.diff = len(self._l) - len(scenario.dialogue)
 		self._changed_handlers = None
 		self._dialogue = deepcopy(scenario.dialogue)
 		self._new_dialogue = None
+		self._split = re.compile(split_pattern) if split_pattern is not None else None
 	def execute(self):
 		self._injure(self.diff, self._new_dialogue)
 	def _injure(self, diff, dialogue):
@@ -767,7 +810,12 @@ class InjureSetenceMemento(DialogueEditorMemento):
 		for h in self._scenario.handlers():
 			self._editor.modify_info(h, [dialogue[h]['speaker'], dialogue[h]['text']], ['speaker', 'text'], ['speaker', 'sentence'], [True, False])
 	def injure_decode(self, l):
-		result = {h: {'speaker': '', 'text': s} for h, s in zip(self._scenario.handlers(), l)}
+		if self._split is None:
+			result = {h: {'speaker': '', 'text': s} for h, s in zip(self._scenario.handlers(), l)}
+		else:
+			result = {h: {
+				'speaker': ('' if len(l := self._split.split(s, 1)) == 1 else l[0]),
+				'text': (s if len(l) == 1 else l[1])} for h, s in zip(self._scenario.handlers(), l)}
 		return result
 
 class LoadAdaptdDialogueMemento(BaseLoadAdaptMemento):

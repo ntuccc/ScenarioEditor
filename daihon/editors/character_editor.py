@@ -48,7 +48,7 @@ class CharacterEditorView(BaseEditorView):
 	def build_list(self, add_command, del_command, up_command, down_command):
 		box_frame = tk.Frame(self._list_frame)
 		scrollbar = tk.Scrollbar(box_frame, orient=tk.VERTICAL)
-		self.listbox = tk.Listbox(box_frame, selectmode = tk.BROWSE, yscrollcommand=scrollbar.set, activestyle = tk.NONE)
+		self.listbox = tk.Listbox(box_frame, selectmode = tk.BROWSE, yscrollcommand=scrollbar.set, activestyle = tk.NONE, exportselection = False)
 		scrollbar.config(command=self.listbox.yview)
 		scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 		self.listbox.pack(side=tk.LEFT, fill=tk.Y, expand=True)

@@ -1,5 +1,5 @@
 {
-	"template": {
+	"Tex File": {
 		"filename": "template.tex",
 		"suffix": "tex",
 		"renderer": "jinja2",
@@ -8,6 +8,13 @@
 			"block_end_string": "&}",
 			"variable_start_string": "{|",
 			"variable_end_string": "|}"
+		}
+	},
+	"Html5 File": {
+		"filename": "template.html",
+		"suffix": "html",
+		"renderer": "jinja2",
+		"env_param": {
 		}
 	}
 }

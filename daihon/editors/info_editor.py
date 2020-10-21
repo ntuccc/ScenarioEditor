@@ -50,25 +50,25 @@ class InfoEditor(BaseEditor):
 			{
 				'name': '編號',
 				'getter': partial(self._get_info, 'index'),
-				'setter': partial(self._set_title, 'index'),
+				'setter': partial(self._set_info, 'index'),
 				'var': None,
 			},
 			{
 				'name': '日期',
 				'getter': partial(self._get_info, 'date'),
-				'setter': partial(self._set_title, 'date'),
+				'setter': partial(self._set_info, 'date'),
 				'var': None,
 			},
 			{
 				'name': '圖檔',
 				'getter': partial(self._get_info, 'image'),
-				'setter': partial(self._set_title, 'image'),
+				'setter': partial(self._set_info, 'image'),
 				'var': None,
 			},
 			{
 				'name': '填充圖檔',
 				'getter': partial(self._get_info, 'imagelist'),
-				'setter': partial(self._set_title, 'imagelist'),
+				'setter': partial(self._set_info, 'imagelist'),
 				'var': None,
 			},
 			#...
@@ -106,7 +106,7 @@ class InfoEditor(BaseEditor):
 		self._scenario.other_info[info] = value
 	def _apply(self):
 		try:
-			memento = UpdateInfoMemento(self.entries)
+			m = UpdateInfoMemento(self.entries)
 		except NoNeedApplyError:
 			return
 

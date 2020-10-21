@@ -3,7 +3,11 @@
 {#- Render the gimi65536's scenario with version >= 0.0.2 #}
 {&- set processor = MacroProcessor(scenario.macrosignal, scenario.macrosplit) &}
 
+\SetNewAudience{print}
+\begin{shownto}{print}
 \tailblankOff
+\end{shownto}
+
 \begin{document}
 
 \gentitle{{| scenario.other_info['index'] |}}{{| scenario.other_info['date'] |}}{{| scenario.title |}}
@@ -16,31 +20,31 @@
 
 %\setstretch{1.0}
 {&- for handler in scenario.handlers() &}
-{&- with s = processor(scenario.dialogue[handler]['speaker']), clist = scenario.dialogue[handler]['speaker_list']|select('in', scenario.character) &}
+{&- with s = processor(scenario.dialogue[handler]['speaker']), clist = scenario.dialogue[handler]['speaker_list']|select('in', scenario.character), abb_list = scenario.character|getitem_by_list(clist)|map(attribute = 'abbreviated') &}
 {&- if scenario.dialogue[handler]['speaker']|length == 0 &}
 {#  #}{&- if scenario.dialogue[handler]['speaker_list']|count == 0 &}
 {#        #}\begin{sentence}{}
-{#  #}{&- else &}
-{#        #}\begin{sentence}{{| clist|join('、') |}}[{| clist|join(',') |}] {# reject names not in characters #}
-{#  #}{&- endif &}
+{#- #}{&- else &}
+{#        #}\begin{sentence}{{| abb_list|join('、') |}}[{| clist|join(',') |}] {# reject names not in characters #}
+{#- #}{&- endif &}
 {&- else &}
 {#  #}{&- if s|count == 1 and s[0].get_type == 'none' &}
 {#        #}\begin{sentence}{}
-{#  #}{&- else &}
+{#- #}{&- else &}
 {#        #}\begin{sentence}{{| scenario.dialogue[handler]['speaker'] |}}[{| clist|join(',') |}]
-{#  #}{&- endif &}
+{#- #}{&- endif &}
 {&- endif &}
 {&- endwith &}
 {&- with s = processor(scenario.dialogue[handler]['text']) -&}
 {&- for macroblock in s -&}
 {#  #}{&- if macroblock.get_type() == 'none' -&}
-{#  #}{&- elif macroblock.get_type() == 'plaintext' -&}
-{#        #}{| macroblock.get_param() |}
-{#  #}{&- elif macroblock.get_type() == 'separate' -&}
-{#        #}{&- if macroblock.get_param()|count == 0 &}\ruleline{& else &}\ruleline[{| macroblock.get_param()[0] |}]{& endif &}
-{#  #}{&- elif macroblock.get_type() == 'ruby' -&}
-{#        #}\ruby{{| macroblock.get_param()[0] |}}{{| macroblock.get_param()[1] |}}
-{#  #}{&- endif -&}
+{#- #}{&- elif macroblock.get_type() == 'plaintext' -&}
+{#        #}{|- macroblock.get_param() -|}
+{#- #}{&- elif macroblock.get_type() == 'separate' -&}
+{#        #}{&- if macroblock.get_param()|count == 0 &}\ruleline{& else &}\ruleline[{| macroblock.get_param()[0] |}]{& endif -&}
+{#- #}{&- elif macroblock.get_type() == 'ruby' -&}
+{#        #}\ruby[g]{{|- macroblock.get_param()[0] |}}{{| macroblock.get_param()[1] -|}}
+{#- #}{&- endif -&}
 {&- endfor -&}
 {&- endwith -&}
 \end{sentence}

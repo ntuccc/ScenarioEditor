@@ -3,6 +3,7 @@ from pathlib import Path
 from importlib.resources import open_text, path as resource_path
 
 from .macro_processor import Processor
+from .filters import filters
 from .. import templates
 
 class Extractor:
@@ -21,7 +22,10 @@ class Extractor:
 		print(info)
 		if not hasattr(self, f'_extract_env_{tname}'):
 			with resource_path(templates, '.') as path:
-				setattr(self, f'_extract_env_{tname}', Environment(loader = FileSystemLoader(str(path)), extensions = [i18n, do, loopcontrols, with_], **info['env_param']))
+				e = Environment(loader = FileSystemLoader(str(path)), extensions = [i18n, do, loopcontrols, with_], **info['env_param'])
+				for n, f in filters.items():
+					e.filters[n] = f
+				setattr(self, f'_extract_env_{tname}', e)
 		template = getattr(self, f'_extract_env_{tname}').get_template(info['filename'])
 		with open(f'{Path(filename).stem}.{info["suffix"]}', 'w', encoding = 'utf-8') as file:
 			file.write(template.render({'scenario': scenario, 'MacroProcessor': Processor}))
@@ -31,7 +35,10 @@ class Extractor:
 		from docxtpl import DocxTemplate
 		info = self.templates[tname]
 		if not hasattr(self, f'_extract_env_{tname}'):
-			setattr(self, f'_extract_env_{tname}', Environment(extensions = [i18n, do, loopcontrols, with_], **info['env_param']))
+			e = Environment(extensions = [i18n, do, loopcontrols, with_], **info['env_param'])
+			for n, f in filters.items():
+				e.filters[n] = f
+			setattr(self, f'_extract_env_{tname}', e)
 		with resource_path(templates, info['filename']) as template_path:
 			doctemplate = DocxTemplate(str(template_path))
 		doctemplate.render({'scenario': scenario}, getattr(self, f'_extract_env_{tname}'))

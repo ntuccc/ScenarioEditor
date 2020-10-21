@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+{#- Render the gimi65536's scenario with version >= 0.0.2 #}
+{%- set processor = MacroProcessor(scenario.macrosignal, scenario.macrosplit) %}
+<html lang="zh-Hant-TW">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width = device-width, initial-scale = 1.0">
+	<title>{{ scenario.title|e }}</title>
+	<style>
+		:root{
+			--border-width: 1px;
+			--border-style: solid;
+		}
+		@media (max-width: 1200px) {
+			body{
+				width: max-width;
+			}
+		}
+		@media (min-width: 1201px) {
+			body{
+				width: 1200px;
+				margin: 0 auto;
+			}
+		}
+		h1, h2{
+			text-align:center;
+		}
+		dl{
+			margin: auto;
+			max-width: 800px;
+			line-height: 150%;
+		}
+		.dialogue{
+			background-color: transparent;
+			border-style: var(--border-style);
+			border-width: var(--border-width);
+			padding: 5px;
+			font-size: 1rem;
+		}
+		.dialogue > * {
+			margin-top: 10px;
+		}
+		.dialogue > *:first-child{
+			margin-top: 0;
+		}
+		.sentence{
+			display: flex;
+		}
+		.speaker{
+			margin-right: 0;
+		}
+		.speaker::after{
+			content: "：";
+		}
+		.text{
+			flex-grow: 1;
+		}
+		.ruleline{
+			display: flex;
+			flex-direction: row;
+		}
+		.ruleline::before, .ruleline::after{
+			content: "";
+			flex: 1 1;
+			border-bottom: 1px solid #000;
+			margin: auto;
+		}
+		.cast{
+			margin: 10px auto;
+			display: table;
+			width: inherit;
+			border-collapse: separate;
+			border-spacing: 10px;
+		}
+		.cast-row{
+			display: table-row;
+		}
+		.cast-head, .cast-button, .cast-name, .cast-abbr, .cast-gender, .cast-casting, .cast-showing{
+			display: table-cell;
+		}
+		.cast-head{
+			font-weight: bold;
+		}
+{%- for name, info in scenario.character.items()|sort(attribute = '1.order') %}
+		.highlight-{{ info['abbreviated']|e }}{
+			background-color: {{ info['color'] }};
+		}
+{%- endfor %}
+	</style>
+</head>
+<body>
+	<h2>{{ scenario.other_info['index'] }}</h2>
+	<h2>{{ scenario.other_info['date'] }}</h2>
+	<h1>{{ scenario.title|e }}</h1>
+	<div class="dialogue">
+{%- for handler in scenario.handlers() %}
+{%- with s = processor(scenario.dialogue[handler]['speaker']), clist = scenario.dialogue[handler]['speaker_list']|select('in', scenario.character) %}
+{%- with abb_list = scenario.character|getitem_by_list(clist)|map(attribute = 'abbreviated') %}
+		<div class="sentence">
+{%- if scenario.dialogue[handler]['speaker']|length == 0 %}
+	{%- if scenario.dialogue[handler]['speaker_list']|count != 0 %}
+			<div class="speaker {{ abb_list|join(' ')|e }}">{{ abb_list|join('、')|e }}</div>{# reject names not in characters #}
+	{%- endif %}
+{%- else %}
+	{%- if s|count == 1 and s[0].get_type == 'none' %}
+	{%- else %}
+			<div class="speaker {{ abb_list|join(' ')|e }}">{{ scenario.dialogue[handler]['speaker']|e }}</div>
+	{%- endif %}
+{%- endif %}
+{%- endwith %}
+{%- endwith %}
+{%- with s = processor(scenario.dialogue[handler]['text']) -%}
+			<div class="text">
+{%- for macroblock in s -%}
+	{%- if macroblock.get_type() == 'none' -%}
+	{%- elif macroblock.get_type() == 'plaintext' -%}
+				{{ macroblock.get_param()|e }}
+	{%- elif macroblock.get_type() == 'separate' -%}
+				<span class="ruleline">{%- if macroblock.get_param()|count != 0 %}{{ macroblock.get_param()[0]|e }}{% endif %}</span>
+	{%- elif macroblock.get_type() == 'ruby' -%}
+				<ruby><rb>{{ macroblock.get_param()[0]|e }}</rb><rp>（</rp><rt>{{ macroblock.get_param()[1]|e }}</rt><rp>）</rp></ruby>
+	{%- endif -%}
+{%- endfor -%}
+			</div>
+{%- endwith -%}
+		</div>
+{%- endfor %}
+	</div>
+	<div class="cast">
+		<div class="cast-row">
+			<div class="cast-head"></div>
+			<div class="cast-head">角色名稱</div>
+			<div class="cast-head">簡稱</div>
+			<div class="cast-head">性別</div>
+			<div class="cast-head">聲優</div>
+			<div class="cast-head">顯示中</div>
+		</div>
+{%- for name, info in scenario.character.items()|sort(attribute = '1.order') %}
+		<div class="cast-row">
+			<div class="cast-button"><button onclick="switchColor(`{{ info['abbreviated']|e }}`, `{{ info['color'] }}`);">切換顯示</button></div>
+			<div class="cast-name">{{ name|e }}</div>
+			<div class="cast-abbr">{{ info['abbreviated']|e }}</div>
+			<div class="cast-gender">{{ info['gender']|e }}</div>
+			<div class="cast-casting">{{ info['cast']|e }}</div>
+			<div class="cast-showing show-{{ info['abbreviated']|e }}">No</div>
+		</div>
+{%- endfor %}
+	</div>
+	<script>
+		var state_table = new Map();
+		function switchColor(cls, color) {
+			if(!state_table.has(cls)){
+				state_table.set(cls, false);
+			}
+			if(state_table.get(cls)){
+				state_table.set(cls, false);
+				for (var i of document.getElementsByClassName(cls)) {
+					i.classList.remove('highlight-' + cls);
+				}
+				for (var i of document.getElementsByClassName('show-' + cls)) {
+					i.textContent = 'No';
+				}
+			}else{
+				state_table.set(cls, true);
+				for (var i of document.getElementsByClassName(cls)) {
+					i.classList.add('highlight-' + cls);
+				}
+				for (var i of document.getElementsByClassName('show-' + cls)) {
+					i.textContent = 'Yes';
+				}
+			}
+		}
+	</script>
+</body>
+</html>
