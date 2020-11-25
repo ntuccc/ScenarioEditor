@@ -216,8 +216,13 @@ class DialogueEditor(BaseEditor):
 				'info': {},
 				'buttons': [
 					{
-						'text': '←',
+						'text': '↵',
 						'command': partial(self._replace_text, ''),
+						'enable_state': _SelectState.select1,
+					},
+					{
+						'text': '␣',
+						'command': partial(self._replace_text, '　'),
 						'enable_state': _SelectState.select1,
 					},
 					{
@@ -523,8 +528,11 @@ class SpeakerListDialog(simpledialog.Dialog):
 		frame.pack()
 
 		if self._ori_list is not None:
-			for i in self._ori_list:
-				self._listbox.selection_set(i)
+			try:
+				for i in self._ori_list:
+					self._listbox.selection_set(i)
+			except:
+				self._listbox.selection_clear(0)
 	def buttonbox(self):
 		box = tk.Frame(self)
 

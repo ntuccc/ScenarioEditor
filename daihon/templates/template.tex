@@ -20,7 +20,8 @@
 
 %\setstretch{1.0}
 {&- for handler in scenario.handlers() &}
-{&- with s = processor(scenario.dialogue[handler]['speaker']), clist = scenario.dialogue[handler]['speaker_list']|select('in', scenario.character), abb_list = scenario.character|getitem_by_list(clist)|map(attribute = 'abbreviated') &}
+{&- with s = processor(scenario.dialogue[handler]['speaker']), clist = scenario.dialogue[handler]['speaker_list']|select('in', scenario.character)|list &}
+{&- with abb_list = scenario.character|getitem_by_list(clist)|map(attribute = 'abbreviated')|list &}
 {&- if scenario.dialogue[handler]['speaker']|length == 0 &}
 {#  #}{&- if scenario.dialogue[handler]['speaker_list']|count == 0 &}
 {#        #}\begin{sentence}{}
@@ -34,6 +35,7 @@
 {#        #}\begin{sentence}{{| scenario.dialogue[handler]['speaker'] |}}[{| clist|join(',') |}]
 {#- #}{&- endif &}
 {&- endif &}
+{&- endwith &}
 {&- endwith &}
 {&- with s = processor(scenario.dialogue[handler]['text']) -&}
 {&- for macroblock in s -&}

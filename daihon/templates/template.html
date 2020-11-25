@@ -95,7 +95,7 @@
 	<div class="dialogue">
 {%- for handler in scenario.handlers() %}
 {%- with s = processor(scenario.dialogue[handler]['speaker']), clist = scenario.dialogue[handler]['speaker_list']|select('in', scenario.character) %}
-{%- with abb_list = scenario.character|getitem_by_list(clist)|map(attribute = 'abbreviated') %}
+{%- with abb_list = scenario.character|getitem_by_list(clist)|map(attribute = 'abbreviated')|list %}
 		<div class="sentence">
 {%- if scenario.dialogue[handler]['speaker']|length == 0 %}
 	{%- if scenario.dialogue[handler]['speaker_list']|count != 0 %}
