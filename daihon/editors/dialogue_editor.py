@@ -461,7 +461,8 @@ class DialogueEditor(BaseEditor):
 		#a = InjureTextDialog(self, '編輯台詞', ori_text).result
 		a = InjureTextDialog(self.view, '置換台詞').result
 		if a is not None:
-			m = InjureSetenceMemento(self, self._scenario, a, '：|:')
+			#m = InjureSetenceMemento(self, self._scenario, a, '：|:')
+			m = InjureSetenceMemento(self, self._scenario, a, '：')
 			self.save_memento(m)
 	def _image(self):
 		ImageProcessDialog(self)
