@@ -1,0 +1,7 @@
+Macro_start=1
+Macro_end=2
+Split=3
+Any=4
+'-('=1
+')-'=2
+'/'=3

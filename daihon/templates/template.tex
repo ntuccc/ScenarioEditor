@@ -2,6 +2,16 @@
 
 {#- Render the gimi65536's scenario with version >= 0.0.2 #}
 {&- set processor = MacroProcessor(scenario.macrosignal, scenario.macrosplit) &}
+{&- macro dialogue_macro_printer(macroblock) &}
+{#- #}{& if macroblock.get_type() == 'none' &}
+{#- #}{& elif macroblock.get_type() == 'plaintext' &}
+{#-       #}{| macroblock.get_param() |}
+{#- #}{& elif macroblock.get_type() == 'separate' &}{# Support recursive call #}
+{#-       #}{& if macroblock.get_param()|count == 0 &}\ruleline{& else &}\ruleline[{& for m in macroblock.get_param()[0] &}{| dialogue_macro_printer(m) |}{& endfor &}]{& endif &}
+{#- #}{& elif macroblock.get_type() == 'ruby' &}
+{#-       #}\ruby[g]{{| macroblock.get_param()[0] |}}{{| macroblock.get_param()[1] |}}
+{#- #}{& endif &}
+{&- endmacro &}
 
 \SetNewAudience{print}
 \begin{shownto}{print}
@@ -39,14 +49,7 @@
 {&- endwith &}
 {&- with s = processor(scenario.dialogue[handler]['text']) -&}
 {&- for macroblock in s -&}
-{#  #}{&- if macroblock.get_type() == 'none' -&}
-{#- #}{&- elif macroblock.get_type() == 'plaintext' -&}
-{#        #}{|- macroblock.get_param() -|}
-{#- #}{&- elif macroblock.get_type() == 'separate' -&}
-{#        #}{&- if macroblock.get_param()|count == 0 &}\ruleline{& else &}\ruleline[{| macroblock.get_param()[0] |}]{& endif -&}
-{#- #}{&- elif macroblock.get_type() == 'ruby' -&}
-{#        #}\ruby[g]{{|- macroblock.get_param()[0] |}}{{| macroblock.get_param()[1] -|}}
-{#- #}{&- endif -&}
+{#-  #}{| dialogue_macro_printer(macroblock) |}
 {&- endfor -&}
 {&- endwith -&}
 \end{sentence}
