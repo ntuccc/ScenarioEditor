@@ -155,11 +155,11 @@ class ScenarioEditor:
 		for i, tname in enumerate(ex.templates, 1):
 			extract_menu.add_command(
 				label = tname,
-				command = (lambda tname=tname: self.extract_file(tname = tname, scenario = fm.scenario, filename = fm.filename)),
+				command = (lambda tname=tname: self.extract_file(tname = tname, scenario = fm.scenario, filepath = fm.filepath)),
 				accelerator = ('' if i >= 10 else f'Ctrl+{i}')
 			)
 			if i < 10:
-				view.bind(f'<Control-Key-{i}>', (lambda _, tname=tname: self.extract_file(tname = tname, scenario = fm.scenario, filename = fm.filename)))
+				view.bind(f'<Control-Key-{i}>', (lambda _, tname=tname: self.extract_file(tname = tname, scenario = fm.scenario, filepath = fm.filepath)))
 		view.menu_file.add_cascade(menu = extract_menu, label = '匯出')
 	def build_notebook(self):
 		view = self.view
@@ -254,11 +254,11 @@ class ScenarioEditor:
 			messagebox.showerror("錯誤", "儲存檔案時發生了錯誤！", parent = self.view)
 			return False
 		return True
-	def extract_file(self, tname, scenario, filename):
+	def extract_file(self, tname, scenario, filepath):
 		ex = self.ex
 
 		self.upload_scenario()
-		ex.extract(tname, scenario, filename)
+		ex.extract(tname, scenario, filepath)
 	def upload_scenario(self):
 		self._c_editor.upload_to_scenario()
 		self._d_editor.upload_to_scenario()
