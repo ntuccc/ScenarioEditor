@@ -65,11 +65,12 @@ class Processor:
 			if keyword is None:
 				raise MacroError(f'The macro name should be a nonempty plaintext.')
 			# strip
-			keyword = keyword.lstrip()
-			if len(result) == 1:
-				keyword = keyword.rstrip()
-			elif type(result[-1]) is list and type(result[-1][-1]) is _Plaintext:
-				result[-1][-1].param = result[-1][-1].param.rstrip()
+			# Deprecated: it is done by the processor
+			#keyword = keyword.lstrip()
+			#if len(result) == 1:
+			#	keyword = keyword.rstrip()
+			#elif type(result[-1]) is list and type(result[-1][-1]) is _Plaintext:
+			#	result[-1][-1].param = result[-1][-1].param.rstrip()
 
 			keyword = keyword.lower() #case-insensitive
 			args = result[1:] # list of lists
@@ -94,8 +95,12 @@ class Processor:
 			raise MacroError(f'The macro "{keyword}" is not defined.')
 
 		# Visit a parse tree produced by gscenarioParser#macro.
-		def visitMacro(self, ctx:gscenarioParser.PlaintextContext):
-			return self.visitText_in_macro(ctx.getChild(1))
+		def visitMacro(self, ctx:gscenarioParser.MacroContext):
+			for i in range(ctx.getChildCount()):
+				child = ctx.getChild(i)
+				if isinstance(child, gscenarioParser.Text_in_macroContext):
+					return self.visitText_in_macro(child)
+			raise MacroError(f'Empty Macro.')
 
 		# Visit a parse tree produced by gscenarioParser#plaintext.
 		def visitPlaintext(self, ctx:gscenarioParser.PlaintextContext):

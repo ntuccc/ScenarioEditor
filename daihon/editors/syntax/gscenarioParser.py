@@ -11,21 +11,25 @@ else:
 
 def serializedATN():
     with StringIO() as buf:
-        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\6")
-        buf.write("(\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\3\2\5\2\f\n\2\3\2\3")
-        buf.write("\2\5\2\20\n\2\7\2\22\n\2\f\2\16\2\25\13\2\3\3\3\3\3\3")
-        buf.write("\7\3\32\n\3\f\3\16\3\35\13\3\3\4\3\4\3\4\3\4\3\5\6\5$")
-        buf.write("\n\5\r\5\16\5%\3\5\3%\2\6\2\4\6\b\2\2\2(\2\13\3\2\2\2")
-        buf.write("\4\26\3\2\2\2\6\36\3\2\2\2\b#\3\2\2\2\n\f\5\b\5\2\13\n")
-        buf.write("\3\2\2\2\13\f\3\2\2\2\f\23\3\2\2\2\r\17\5\6\4\2\16\20")
-        buf.write("\5\b\5\2\17\16\3\2\2\2\17\20\3\2\2\2\20\22\3\2\2\2\21")
-        buf.write("\r\3\2\2\2\22\25\3\2\2\2\23\21\3\2\2\2\23\24\3\2\2\2\24")
-        buf.write("\3\3\2\2\2\25\23\3\2\2\2\26\33\5\2\2\2\27\30\7\5\2\2\30")
-        buf.write("\32\5\2\2\2\31\27\3\2\2\2\32\35\3\2\2\2\33\31\3\2\2\2")
-        buf.write("\33\34\3\2\2\2\34\5\3\2\2\2\35\33\3\2\2\2\36\37\7\3\2")
-        buf.write("\2\37 \5\4\3\2 !\7\4\2\2!\7\3\2\2\2\"$\7\6\2\2#\"\3\2")
-        buf.write("\2\2$%\3\2\2\2%&\3\2\2\2%#\3\2\2\2&\t\3\2\2\2\7\13\17")
-        buf.write("\23\33%")
+        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\7")
+        buf.write("\64\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\3\2\5\2\f\n\2\3\2")
+        buf.write("\3\2\5\2\20\n\2\7\2\22\n\2\f\2\16\2\25\13\2\3\3\3\3\3")
+        buf.write("\3\7\3\32\n\3\f\3\16\3\35\13\3\3\4\3\4\7\4!\n\4\f\4\16")
+        buf.write("\4$\13\4\3\4\3\4\7\4(\n\4\f\4\16\4+\13\4\3\4\3\4\3\5\6")
+        buf.write("\5\60\n\5\r\5\16\5\61\3\5\3\61\2\6\2\4\6\b\2\3\3\2\5\7")
+        buf.write("\2\66\2\13\3\2\2\2\4\26\3\2\2\2\6\36\3\2\2\2\b/\3\2\2")
+        buf.write("\2\n\f\5\b\5\2\13\n\3\2\2\2\13\f\3\2\2\2\f\23\3\2\2\2")
+        buf.write("\r\17\5\6\4\2\16\20\5\b\5\2\17\16\3\2\2\2\17\20\3\2\2")
+        buf.write("\2\20\22\3\2\2\2\21\r\3\2\2\2\22\25\3\2\2\2\23\21\3\2")
+        buf.write("\2\2\23\24\3\2\2\2\24\3\3\2\2\2\25\23\3\2\2\2\26\33\5")
+        buf.write("\2\2\2\27\30\7\5\2\2\30\32\5\2\2\2\31\27\3\2\2\2\32\35")
+        buf.write("\3\2\2\2\33\31\3\2\2\2\33\34\3\2\2\2\34\5\3\2\2\2\35\33")
+        buf.write("\3\2\2\2\36\"\7\3\2\2\37!\7\6\2\2 \37\3\2\2\2!$\3\2\2")
+        buf.write("\2\" \3\2\2\2\"#\3\2\2\2#%\3\2\2\2$\"\3\2\2\2%)\5\4\3")
+        buf.write("\2&(\7\6\2\2\'&\3\2\2\2(+\3\2\2\2)\'\3\2\2\2)*\3\2\2\2")
+        buf.write("*,\3\2\2\2+)\3\2\2\2,-\7\4\2\2-\7\3\2\2\2.\60\t\2\2\2")
+        buf.write("/.\3\2\2\2\60\61\3\2\2\2\61\62\3\2\2\2\61/\3\2\2\2\62")
+        buf.write("\t\3\2\2\2\t\13\17\23\33\")\61")
         return buf.getvalue()
 
 
@@ -42,7 +46,7 @@ class gscenarioParser ( Parser ):
     literalNames = [ "<INVALID>", "'-('", "')-'", "'/'" ]
 
     symbolicNames = [ "<INVALID>", "Macro_start", "Macro_end", "Split", 
-                      "Any" ]
+                      "Space", "Any" ]
 
     RULE_text = 0
     RULE_text_in_macro = 1
@@ -55,7 +59,8 @@ class gscenarioParser ( Parser ):
     Macro_start=1
     Macro_end=2
     Split=3
-    Any=4
+    Space=4
+    Any=5
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -115,8 +120,8 @@ class gscenarioParser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 9
             self._errHandler.sync(self)
-            _la = self._input.LA(1)
-            if _la==gscenarioParser.Any:
+            la_ = self._interp.adaptivePredict(self._input,0,self._ctx)
+            if la_ == 1:
                 self.state = 8
                 self.plaintext()
 
@@ -129,8 +134,8 @@ class gscenarioParser ( Parser ):
                 self.macro()
                 self.state = 13
                 self._errHandler.sync(self)
-                _la = self._input.LA(1)
-                if _la==gscenarioParser.Any:
+                la_ = self._interp.adaptivePredict(self._input,1,self._ctx)
+                if la_ == 1:
                     self.state = 12
                     self.plaintext()
 
@@ -233,6 +238,12 @@ class gscenarioParser ( Parser ):
         def Macro_end(self):
             return self.getToken(gscenarioParser.Macro_end, 0)
 
+        def Space(self, i:int=None):
+            if i is None:
+                return self.getTokens(gscenarioParser.Space)
+            else:
+                return self.getToken(gscenarioParser.Space, i)
+
         def getRuleIndex(self):
             return gscenarioParser.RULE_macro
 
@@ -257,13 +268,35 @@ class gscenarioParser ( Parser ):
 
         localctx = gscenarioParser.MacroContext(self, self._ctx, self.state)
         self.enterRule(localctx, 4, self.RULE_macro)
+        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 28
             self.match(gscenarioParser.Macro_start)
-            self.state = 29
+            self.state = 32
+            self._errHandler.sync(self)
+            _alt = self._interp.adaptivePredict(self._input,4,self._ctx)
+            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                if _alt==1:
+                    self.state = 29
+                    self.match(gscenarioParser.Space) 
+                self.state = 34
+                self._errHandler.sync(self)
+                _alt = self._interp.adaptivePredict(self._input,4,self._ctx)
+
+            self.state = 35
             self.text_in_macro()
-            self.state = 30
+            self.state = 39
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            while _la==gscenarioParser.Space:
+                self.state = 36
+                self.match(gscenarioParser.Space)
+                self.state = 41
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+
+            self.state = 42
             self.match(gscenarioParser.Macro_end)
         except RecognitionException as re:
             localctx.exception = re
@@ -285,6 +318,18 @@ class gscenarioParser ( Parser ):
                 return self.getTokens(gscenarioParser.Any)
             else:
                 return self.getToken(gscenarioParser.Any, i)
+
+        def Split(self, i:int=None):
+            if i is None:
+                return self.getTokens(gscenarioParser.Split)
+            else:
+                return self.getToken(gscenarioParser.Split, i)
+
+        def Space(self, i:int=None):
+            if i is None:
+                return self.getTokens(gscenarioParser.Space)
+            else:
+                return self.getToken(gscenarioParser.Space, i)
 
         def getRuleIndex(self):
             return gscenarioParser.RULE_plaintext
@@ -310,21 +355,27 @@ class gscenarioParser ( Parser ):
 
         localctx = gscenarioParser.PlaintextContext(self, self._ctx, self.state)
         self.enterRule(localctx, 6, self.RULE_plaintext)
+        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 33 
+            self.state = 45 
             self._errHandler.sync(self)
             _alt = 1+1
             while _alt!=1 and _alt!=ATN.INVALID_ALT_NUMBER:
                 if _alt == 1+1:
-                    self.state = 32
-                    self.match(gscenarioParser.Any)
+                    self.state = 44
+                    _la = self._input.LA(1)
+                    if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << gscenarioParser.Split) | (1 << gscenarioParser.Space) | (1 << gscenarioParser.Any))) != 0)):
+                        self._errHandler.recoverInline(self)
+                    else:
+                        self._errHandler.reportMatch(self)
+                        self.consume()
 
                 else:
                     raise NoViableAltException(self)
-                self.state = 35 
+                self.state = 47 
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,4,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input,6,self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
