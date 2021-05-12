@@ -11,7 +11,7 @@ else:
 
 def serializedATN():
     with StringIO() as buf:
-        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\7")
+        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\t")
         buf.write("\64\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\3\2\5\2\f\n\2\3\2")
         buf.write("\3\2\5\2\20\n\2\7\2\22\n\2\f\2\16\2\25\13\2\3\3\3\3\3")
         buf.write("\3\7\3\32\n\3\f\3\16\3\35\13\3\3\4\3\4\7\4!\n\4\f\4\16")
@@ -43,10 +43,11 @@ class gscenarioParser ( Parser ):
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "'-('", "<INVALID>", "')-'", "'/'" ]
+    literalNames = [ "<INVALID>", "'-('", "<INVALID>", "')-'", "'/'", "<INVALID>", 
+                     "'*/'", "'/*'" ]
 
     symbolicNames = [ "<INVALID>", "Macro_start", "Any", "Macro_end", "Split", 
-                      "Space" ]
+                      "Space", "Comment_end", "Comment_start" ]
 
     RULE_text = 0
     RULE_text_in_macro = 1
@@ -61,6 +62,8 @@ class gscenarioParser ( Parser ):
     Macro_end=3
     Split=4
     Space=5
+    Comment_end=6
+    Comment_start=7
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
