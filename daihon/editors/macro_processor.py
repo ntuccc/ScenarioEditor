@@ -26,6 +26,14 @@ class _Ruby(MacroBlock):
 	_type = 'ruby'
 	param: tuple
 
+class _Comment(MacroBlock):
+	_type = 'comment'
+	param: list
+
+class _Always_in:
+	def __contains__(self, item):
+		return True
+
 class Processor:
 	macro = [
 		{
@@ -45,6 +53,12 @@ class Processor:
 			'keyword': 'ruby',
 			'accept_args': [2],
 			'recursive_args': []
+		},
+		{
+			'class': _Comment,
+			'keyword': 'comment',
+			'accept_args': _Always_in(),
+			'recursive_args': []
 		}
 	]
 	class gscenarioVisitor(ParseTreeVisitor):
@@ -52,7 +66,7 @@ class Processor:
 		def visitText(self, ctx:gscenarioParser.TextContext):
 			n = ctx.getChildCount()
 			result = [ctx.getChild(i).accept(self) for i in range(n)]
-			return result
+			return list(filter((lambda e: not isinstance(e, _Comment)), result))
 
 		# Visit a parse tree produced by gscenarioParser#text_in_macro.
 		def visitText_in_macro(self, ctx:gscenarioParser.Text_in_macroContext):

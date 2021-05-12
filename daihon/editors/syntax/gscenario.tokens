@@ -1,8 +1,8 @@
 Macro_start=1
-Macro_end=2
-Split=3
-Space=4
-Any=5
+Any=2
+Macro_end=3
+Split=4
+Space=5
 '-('=1
-')-'=2
-'/'=3
+')-'=3
+'/'=4

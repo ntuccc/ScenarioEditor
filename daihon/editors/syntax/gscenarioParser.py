@@ -16,19 +16,19 @@ def serializedATN():
         buf.write("\3\2\5\2\20\n\2\7\2\22\n\2\f\2\16\2\25\13\2\3\3\3\3\3")
         buf.write("\3\7\3\32\n\3\f\3\16\3\35\13\3\3\4\3\4\7\4!\n\4\f\4\16")
         buf.write("\4$\13\4\3\4\3\4\7\4(\n\4\f\4\16\4+\13\4\3\4\3\4\3\5\6")
-        buf.write("\5\60\n\5\r\5\16\5\61\3\5\3\61\2\6\2\4\6\b\2\3\3\2\5\7")
-        buf.write("\2\66\2\13\3\2\2\2\4\26\3\2\2\2\6\36\3\2\2\2\b/\3\2\2")
-        buf.write("\2\n\f\5\b\5\2\13\n\3\2\2\2\13\f\3\2\2\2\f\23\3\2\2\2")
-        buf.write("\r\17\5\6\4\2\16\20\5\b\5\2\17\16\3\2\2\2\17\20\3\2\2")
-        buf.write("\2\20\22\3\2\2\2\21\r\3\2\2\2\22\25\3\2\2\2\23\21\3\2")
-        buf.write("\2\2\23\24\3\2\2\2\24\3\3\2\2\2\25\23\3\2\2\2\26\33\5")
-        buf.write("\2\2\2\27\30\7\5\2\2\30\32\5\2\2\2\31\27\3\2\2\2\32\35")
-        buf.write("\3\2\2\2\33\31\3\2\2\2\33\34\3\2\2\2\34\5\3\2\2\2\35\33")
-        buf.write("\3\2\2\2\36\"\7\3\2\2\37!\7\6\2\2 \37\3\2\2\2!$\3\2\2")
-        buf.write("\2\" \3\2\2\2\"#\3\2\2\2#%\3\2\2\2$\"\3\2\2\2%)\5\4\3")
-        buf.write("\2&(\7\6\2\2\'&\3\2\2\2(+\3\2\2\2)\'\3\2\2\2)*\3\2\2\2")
-        buf.write("*,\3\2\2\2+)\3\2\2\2,-\7\4\2\2-\7\3\2\2\2.\60\t\2\2\2")
-        buf.write("/.\3\2\2\2\60\61\3\2\2\2\61\62\3\2\2\2\61/\3\2\2\2\62")
+        buf.write("\5\60\n\5\r\5\16\5\61\3\5\3\61\2\6\2\4\6\b\2\3\4\2\4\4")
+        buf.write("\7\7\2\66\2\13\3\2\2\2\4\26\3\2\2\2\6\36\3\2\2\2\b/\3")
+        buf.write("\2\2\2\n\f\5\b\5\2\13\n\3\2\2\2\13\f\3\2\2\2\f\23\3\2")
+        buf.write("\2\2\r\17\5\6\4\2\16\20\5\b\5\2\17\16\3\2\2\2\17\20\3")
+        buf.write("\2\2\2\20\22\3\2\2\2\21\r\3\2\2\2\22\25\3\2\2\2\23\21")
+        buf.write("\3\2\2\2\23\24\3\2\2\2\24\3\3\2\2\2\25\23\3\2\2\2\26\33")
+        buf.write("\5\2\2\2\27\30\7\6\2\2\30\32\5\2\2\2\31\27\3\2\2\2\32")
+        buf.write("\35\3\2\2\2\33\31\3\2\2\2\33\34\3\2\2\2\34\5\3\2\2\2\35")
+        buf.write("\33\3\2\2\2\36\"\7\3\2\2\37!\7\7\2\2 \37\3\2\2\2!$\3\2")
+        buf.write("\2\2\" \3\2\2\2\"#\3\2\2\2#%\3\2\2\2$\"\3\2\2\2%)\5\4")
+        buf.write("\3\2&(\7\7\2\2\'&\3\2\2\2(+\3\2\2\2)\'\3\2\2\2)*\3\2\2")
+        buf.write("\2*,\3\2\2\2+)\3\2\2\2,-\7\5\2\2-\7\3\2\2\2.\60\t\2\2")
+        buf.write("\2/.\3\2\2\2\60\61\3\2\2\2\61\62\3\2\2\2\61/\3\2\2\2\62")
         buf.write("\t\3\2\2\2\t\13\17\23\33\")\61")
         return buf.getvalue()
 
@@ -43,10 +43,10 @@ class gscenarioParser ( Parser ):
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "'-('", "')-'", "'/'" ]
+    literalNames = [ "<INVALID>", "'-('", "<INVALID>", "')-'", "'/'" ]
 
-    symbolicNames = [ "<INVALID>", "Macro_start", "Macro_end", "Split", 
-                      "Space", "Any" ]
+    symbolicNames = [ "<INVALID>", "Macro_start", "Any", "Macro_end", "Split", 
+                      "Space" ]
 
     RULE_text = 0
     RULE_text_in_macro = 1
@@ -57,10 +57,10 @@ class gscenarioParser ( Parser ):
 
     EOF = Token.EOF
     Macro_start=1
-    Macro_end=2
-    Split=3
-    Space=4
-    Any=5
+    Any=2
+    Macro_end=3
+    Split=4
+    Space=5
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -93,14 +93,6 @@ class gscenarioParser ( Parser ):
 
         def getRuleIndex(self):
             return gscenarioParser.RULE_text
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterText" ):
-                listener.enterText(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitText" ):
-                listener.exitText(self)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitText" ):
@@ -175,14 +167,6 @@ class gscenarioParser ( Parser ):
         def getRuleIndex(self):
             return gscenarioParser.RULE_text_in_macro
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterText_in_macro" ):
-                listener.enterText_in_macro(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitText_in_macro" ):
-                listener.exitText_in_macro(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitText_in_macro" ):
                 return visitor.visitText_in_macro(self)
@@ -246,14 +230,6 @@ class gscenarioParser ( Parser ):
 
         def getRuleIndex(self):
             return gscenarioParser.RULE_macro
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterMacro" ):
-                listener.enterMacro(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitMacro" ):
-                listener.exitMacro(self)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitMacro" ):
@@ -319,12 +295,6 @@ class gscenarioParser ( Parser ):
             else:
                 return self.getToken(gscenarioParser.Any, i)
 
-        def Split(self, i:int=None):
-            if i is None:
-                return self.getTokens(gscenarioParser.Split)
-            else:
-                return self.getToken(gscenarioParser.Split, i)
-
         def Space(self, i:int=None):
             if i is None:
                 return self.getTokens(gscenarioParser.Space)
@@ -333,14 +303,6 @@ class gscenarioParser ( Parser ):
 
         def getRuleIndex(self):
             return gscenarioParser.RULE_plaintext
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterPlaintext" ):
-                listener.enterPlaintext(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitPlaintext" ):
-                listener.exitPlaintext(self)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitPlaintext" ):
@@ -365,7 +327,7 @@ class gscenarioParser ( Parser ):
                 if _alt == 1+1:
                     self.state = 44
                     _la = self._input.LA(1)
-                    if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << gscenarioParser.Split) | (1 << gscenarioParser.Space) | (1 << gscenarioParser.Any))) != 0)):
+                    if not(_la==gscenarioParser.Any or _la==gscenarioParser.Space):
                         self._errHandler.recoverInline(self)
                     else:
                         self._errHandler.reportMatch(self)
