@@ -1,0 +1,12 @@
+Macro_start=1
+Any=2
+Macro_end=3
+Split=4
+Space=5
+Comment_end=6
+Comment_start=7
+'-('=1
+'/*'=7
+')-'=3
+'/'=4
+'*/'=6

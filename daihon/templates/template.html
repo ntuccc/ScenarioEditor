@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 {#- Render the gimi65536's scenario with version >= 0.0.2 #}
 {%- set processor = MacroProcessor(scenario.macrosignal, scenario.macrosplit) %}
+{%- macro dialogue_macro_printer(macroblock) %}
+	{%- if macroblock.get_type() == 'none' -%}
+	{%- elif macroblock.get_type() == 'plaintext' -%}
+				{{ macroblock.get_param()|e }}
+	{%- elif macroblock.get_type() == 'separate' -%}
+				<span class="ruleline">{%- if macroblock.get_param()|count != 0 %}{% for m in macroblock.get_param()[0] %}{{ dialogue_macro_printer(m) }}{% endfor %}{% endif %}</span>
+	{%- elif macroblock.get_type() == 'ruby' -%}
+				<ruby><rb>{{ macroblock.get_param()[0]|e }}</rb><rp>（</rp><rt>{{ macroblock.get_param()[1]|e }}</rt><rp>）</rp></ruby>
+	{%- endif -%}
+{%- endmacro %}
 <html lang="zh-Hant-TW">
 <head>
 	<meta charset="UTF-8">
@@ -115,14 +125,7 @@
 {%- with s = processor(scenario.dialogue[handler]['text']) -%}
 			<div class="text">
 {%- for macroblock in s -%}
-	{%- if macroblock.get_type() == 'none' -%}
-	{%- elif macroblock.get_type() == 'plaintext' -%}
-				{{ macroblock.get_param()|e }}
-	{%- elif macroblock.get_type() == 'separate' -%}
-				<span class="ruleline">{%- if macroblock.get_param()|count != 0 %}{{ macroblock.get_param()[0]|e }}{% endif %}</span>
-	{%- elif macroblock.get_type() == 'ruby' -%}
-				<ruby><rb>{{ macroblock.get_param()[0]|e }}</rb><rp>（</rp><rt>{{ macroblock.get_param()[1]|e }}</rt><rp>）</rp></ruby>
-	{%- endif -%}
+{{- dialogue_macro_printer(macroblock) -}}
 {%- endfor -%}
 			</div>
 {%- endwith -%}

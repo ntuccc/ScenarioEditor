@@ -19,6 +19,7 @@ class FileManager:
 		self.scenario = None
 		self.file = None
 		self.filename = 'untitled'
+		self.filepath = None
 		#self._record: list = []
 		self._filestate: FileState = FileState.Saved #initial _filestate
 	def new(self):
@@ -26,6 +27,7 @@ class FileManager:
 		self.scenario = Scenario()
 		self.file = None
 		self.filename = 'untitled'
+		self.filepath = None
 		#self._record = []
 		self.set_filestate(FileState.NewUnFiled) #override any change from editors
 	def load(self, path):
@@ -40,6 +42,7 @@ class FileManager:
 		self.scenario = new_s
 		self.file = new_f
 		self.filename = path.name
+		self.filepath = path
 		#self._record = []
 		self.set_filestate(FileState.Saved)
 	def save(self):
@@ -59,6 +62,7 @@ class FileManager:
 			raise e
 		self.file = new_f
 		self.filename = path.name #this 'path.name' is the file name without parent
+		self.filepath = path
 		self.set_filestate(FileState.UnSaved)
 	def close(self):
 		try:

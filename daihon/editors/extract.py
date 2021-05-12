@@ -11,11 +11,15 @@ class Extractor:
 		with open_text(templates, 'templates.json') as file:
 			#After Py 3.7 dict preserves the order
 			self.templates = json.load(file)
-	def extract(self, tname, scenario, filename):
+	def extract(self, tname, scenario, filepath):
 		if tname not in self.templates:
 			return
-		getattr(self, f'_extract_with_{self.templates[tname]["renderer"]}')(tname, scenario, filename)
-	def _extract_with_jinja2(self, tname, scenario, filename):
+		if filepath is None:
+			NotImplemented
+			print('Silent warning for no extraction executed.')
+			return
+		getattr(self, f'_extract_with_{self.templates[tname]["renderer"]}')(tname, scenario, filepath)
+	def _extract_with_jinja2(self, tname, scenario, filepath):
 		from jinja2 import Environment, FileSystemLoader
 		from jinja2.ext import i18n, do, loopcontrols, with_
 		info = self.templates[tname]
@@ -27,9 +31,9 @@ class Extractor:
 					e.filters[n] = f
 				setattr(self, f'_extract_env_{tname}', e)
 		template = getattr(self, f'_extract_env_{tname}').get_template(info['filename'])
-		with open(f'{Path(filename).stem}.{info["suffix"]}', 'w', encoding = 'utf-8') as file:
+		with open(Path(filepath).with_suffix(f'.{info["suffix"]}'), 'w', encoding = 'utf-8') as file:
 			file.write(template.render({'scenario': scenario, 'MacroProcessor': Processor}))
-	def _extract_with_docxtpl(self, tname, scenario, filename):
+	def _extract_with_docxtpl(self, tname, scenario, filepath):
 		from jinja2 import Environment
 		from jinja2.ext import i18n, do, loopcontrols, with_
 		from docxtpl import DocxTemplate
@@ -42,4 +46,4 @@ class Extractor:
 		with resource_path(templates, info['filename']) as template_path:
 			doctemplate = DocxTemplate(str(template_path))
 		doctemplate.render({'scenario': scenario}, getattr(self, f'_extract_env_{tname}'))
-		doctemplate.save(f'{Path(filename).stem}.{info["suffix"]}')
+		doctemplate.save(Path(filepath).with_suffix(f'.{info["suffix"]}'))
