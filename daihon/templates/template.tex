@@ -7,7 +7,9 @@
 {#- #}{& elif macroblock.get_type() == 'plaintext' &}
 {#-       #}{| macroblock.get_param() |}
 {#- #}{& elif macroblock.get_type() == 'separate' &}{# Support recursive call #}
-{#-       #}{& if macroblock.get_param()|count == 0 &}\ruleline{& else &}\ruleline[{& for m in macroblock.get_param()[0] &}{| dialogue_macro_printer(m) |}{& endfor &}]{& endif &}
+{#-       #}{& if macroblock.get_param()|count == 0 &}\ruleline{& else &}\begin{inrule}{& for m in macroblock.get_param()[0] &}{| dialogue_macro_printer(m) |}{& endfor &}\end{inrule}{& endif &}
+{#- #}{& elif macroblock.get_type() == 'center' &}{# Support recursive call #}
+{#-       #}\begin{incenter}{& for m in macroblock.get_param()[0] &}{| dialogue_macro_printer(m) |}{& endfor &}\end{incenter}
 {#- #}{& elif macroblock.get_type() == 'ruby' &}
 {#-       #}\ruby[g]{{| macroblock.get_param()[0] |}}{{| macroblock.get_param()[1] |}}
 {#- #}{& endif &}

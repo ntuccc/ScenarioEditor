@@ -22,6 +22,10 @@ class _Separate(MacroBlock):
 	_type = 'separate'
 	param: list
 
+class _Center(MacroBlock):
+	_type = 'center'
+	param: list #singleton
+
 class _Ruby(MacroBlock):
 	_type = 'ruby'
 	param: tuple
@@ -46,6 +50,12 @@ class Processor:
 			'class': _Separate,
 			'keyword': 'separate',
 			'accept_args': [0, 1],
+			'recursive_args': [0]
+		},
+		{
+			'class': _Center,
+			'keyword': 'center',
+			'accept_args': [1],
 			'recursive_args': [0]
 		},
 		{

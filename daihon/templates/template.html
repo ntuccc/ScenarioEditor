@@ -7,6 +7,8 @@
 				{{ macroblock.get_param()|e }}
 	{%- elif macroblock.get_type() == 'separate' -%}
 				<span class="ruleline">{%- if macroblock.get_param()|count != 0 %}{% for m in macroblock.get_param()[0] %}{{ dialogue_macro_printer(m) }}{% endfor %}{% endif %}</span>
+	{%- elif macroblock.get_type() == 'center' -%}
+				<span class="center">{% for m in macroblock.get_param()[0] %}{{ dialogue_macro_printer(m) }}{% endfor %}</span>
 	{%- elif macroblock.get_type() == 'ruby' -%}
 				<ruby><rb>{{ macroblock.get_param()[0]|e }}</rb><rp>（</rp><rt>{{ macroblock.get_param()[1]|e }}</rt><rp>）</rp></ruby>
 	{%- endif -%}
@@ -76,6 +78,15 @@
 			content: "";
 			flex: 1 1;
 			border-bottom: 1px solid #000;
+			margin: auto;
+		}
+		.center{
+			display: flex;
+			flex-direction: row;
+		}
+		.center::before, .center::after{
+			content: "";
+			flex: 1 1;
 			margin: auto;
 		}
 		.cast{
