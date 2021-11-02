@@ -105,6 +105,20 @@
 		.cast-head{
 			font-weight: bold;
 		}
+		/* Turn on to use vertical writing */
+		/*body{
+			writing-mode: vertical-rl;
+		}
+		.dialogue > * {
+			margin-top: 0;
+			margin-right: 10px;
+		}
+		.dialogue > *:first-child{
+			margin-right: 0;
+		}
+		.cast {
+			margin: auto 10px;
+		}*/
 {%- for name, info in scenario.character.items()|sort(attribute = '1.order') %}
 		.highlight-{{ info['abbreviated']|e }}{
 			background-color: {{ info['color'] }};
