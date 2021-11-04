@@ -185,25 +185,25 @@
 {%- endfor %}
 	</div>
 	<script>
-		var state_table = new Map();
+		let state_table = new Map();
 		function switchColor(cls, color) {
 			if(!state_table.has(cls)){
 				state_table.set(cls, false);
 			}
 			if(state_table.get(cls)){
 				state_table.set(cls, false);
-				for (var i of document.getElementsByClassName(cls)) {
+				for (let i of document.getElementsByClassName(cls)) {
 					i.classList.remove('highlight-' + cls);
 				}
-				for (var i of document.getElementsByClassName('show-' + cls)) {
+				for (let i of document.getElementsByClassName('show-' + cls)) {
 					i.textContent = 'No';
 				}
 			}else{
 				state_table.set(cls, true);
-				for (var i of document.getElementsByClassName(cls)) {
+				for (let i of document.getElementsByClassName(cls)) {
 					i.classList.add('highlight-' + cls);
 				}
-				for (var i of document.getElementsByClassName('show-' + cls)) {
+				for (let i of document.getElementsByClassName('show-' + cls)) {
 					i.textContent = 'Yes';
 				}
 			}
