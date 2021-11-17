@@ -175,6 +175,8 @@ class CharacterEditor(BaseEditor):
 		order = sorted(chara_order.keys(), key = lambda n: chara_order[n])
 		order.extend(no_order_chara)
 
+		self.view.listbox.delete(0, self.view.listbox.size() - 1)
+
 		self.view.listbox.insert('end', *order)
 		self._adapt_order()
 	def upload_to_scenario(self):
