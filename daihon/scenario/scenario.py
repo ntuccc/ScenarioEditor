@@ -100,11 +100,13 @@ class DialogueDict(Mapping):
 class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	_handler_generator = staticmethod(lambda: ''.join(random.choices(string.ascii_uppercase + string.digits, k = 16)))
 	_base: str = 'gimi65536'
-	_version: str = '0.0.2'
-	_default_macrosignal = ':::'
+	_version: str = '0.0.3'
+	_default_macrostart = '-('
+	_default_macrostop = ')-'
 	_default_macrosplit = '/'
 	def __init__(self):
-		self._macrosignal = self._default_macrosignal
+		self._macrostart = self._default_macrostart
+		self._macrostop = self._default_macrostop
 		self._macrosplit = self._default_macrosplit
 		self._title: str = ''
 		self._other_info: dict = {}
@@ -129,11 +131,17 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 	def version(self, i: str):
 		raise AttributeError("""The property 'version' in gimi65536's Scenario format is read-only.""")
 	@property
-	def macrosignal(self):
-		return self._macrosignal
-	@macrosignal.setter
-	def macrosignal(self, i: str):
-		self._macrosignal = i
+	def macrostart(self):
+		return self._macrostart
+	@macrostart.setter
+	def macrostart(self, i: str):
+		self._macrostart = i
+	@property
+	def macrostop(self):
+		return self._macrostop
+	@macrostop.setter
+	def macrostop(self, i: str):
+		self._macrostop = i
 	@property
 	def macrosplit(self):
 		return self._macrosplit
@@ -151,7 +159,8 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		d = {
 			'Base': self.base,
 			'Version': self.version,
-			'MacroSignal': self._macrosignal,
+			'MacroStart': self._macrostart,
+			'MacroStop': self._macrostop,
 			'MacroSplit': self._macrosplit,
 			'Title': self.title,
 			'ScenarioInfo': self.other_info,
@@ -166,18 +175,25 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		if data['Base'] == 'gimi65536':
 			#version update
 			if data['Version'] == '0.0.1':
-				data['MacroSignal'] = cls._default_macrosignal
+				data['MacroStart'] = cls._default_macrostart
+				data['MacroStop'] = cls._default_macrostop
 				data['MacroSplit'] = cls._default_macrosplit
-				data['Version'] = '0.0.2'
+				data['Version'] = '0.0.3'
+			if data['Version'] == '0.0.2':
+				del data['MacroSignal']
+				data['MacroStart'] = cls._default_macrostart
+				data['MacroStop'] = cls._default_macrostop
+				data['Version'] = '0.0.3'
 
 			#newest
-			if data['Version'] != '0.0.2':
+			if data['Version'] != '0.0.3':
 				#error
 				pass
 		else:
 			f, t = (data['Base'], data['Version']), (cls._base, cls._version)
 			data = transformers[f][t](data)
-		sol.macrosignal = data['MacroSignal']
+		sol.macrostart = data['MacroStart']
+		sol.macrostop = data['MacroStop']
 		sol.macrosplit = data["MacroSplit"]
 		sol.title = data['Title']
 		sol.other_info.update(data['ScenarioInfo'])

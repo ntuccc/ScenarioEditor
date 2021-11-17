@@ -15,11 +15,6 @@
 {#- #}{& endif &}
 {&- endmacro &}
 
-%\SetNewAudience{print}
-%\begin{shownto}{print}
-\tailblankOff
-%\end{shownto}
-
 \begin{document}
 
 \gentitle{{| scenario.other_info['index'] |}}{{| scenario.other_info['date'] |}}{{| scenario.title |}}
@@ -38,13 +33,13 @@
 {#  #}{&- if scenario.dialogue[handler]['speaker_list']|count == 0 &}
 {#        #}\begin{sentence}{}
 {#- #}{&- else &}
-{#        #}\begin{sentence}{{| abb_list|join('、') |}}[{| clist|join(',') |}] {# reject names not in characters #}
+{#        #}\begin{sentence}{{| abb_list|join('、') |}}{# [{| clist|join(',') |}] #} {# reject names not in characters #}
 {#- #}{&- endif &}
 {&- else &}
 {#  #}{&- if s|count == 1 and s[0].get_type == 'none' &}
 {#        #}\begin{sentence}{}
 {#- #}{&- else &}
-{#        #}\begin{sentence}{{| scenario.dialogue[handler]['speaker'] |}}[{| clist|join(',') |}]
+{#        #}\begin{sentence}{{| scenario.dialogue[handler]['speaker'] |}}{# [{| clist|join(',') |}] #}
 {#- #}{&- endif &}
 {&- endif &}
 {&- endwith &}
