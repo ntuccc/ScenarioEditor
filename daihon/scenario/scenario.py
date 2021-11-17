@@ -175,10 +175,10 @@ class Scenario(ScenarioBase, ScenarioWithCharacters, ScenarioWithDialogue):
 		if data['Base'] == 'gimi65536':
 			#version update
 			if data['Version'] == '0.0.1':
-				data['MacroStart'] = cls._default_macrostart
-				data['MacroStop'] = cls._default_macrostop
+				data['MacroSignal'] = ':::'
 				data['MacroSplit'] = cls._default_macrosplit
-				data['Version'] = '0.0.3'
+				data['Version'] = '0.0.2'
+
 			if data['Version'] == '0.0.2':
 				del data['MacroSignal']
 				data['MacroStart'] = cls._default_macrostart
