@@ -140,7 +140,7 @@ class Processor:
 			return None
 
 
-	def __init__(self, signal: str, split: str):
+	def __init__(self, start: str, stop: str, split: str):
 		#signal = re.escape(signal)
 		#split = re.escape(split)
 		#self.sentence_regex = re.compile(fR'{signal}\s*(.*?)\s*{signal}')

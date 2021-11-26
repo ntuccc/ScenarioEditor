@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-{#- Render the gimi65536's scenario with version >= 0.0.2 #}
-{%- set processor = MacroProcessor(scenario.macrosignal, scenario.macrosplit) %}
+{#- Render the gimi65536's scenario with version >= 0.0.3 #}
+{%- set processor = MacroProcessor(scenario.macrostart, scenario.macrostop, scenario.macrosplit) %}
 {%- macro dialogue_macro_printer(macroblock) %}
 	{%- if macroblock.get_type() == 'none' -%}
 	{%- elif macroblock.get_type() == 'plaintext' -%}

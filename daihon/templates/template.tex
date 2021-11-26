@@ -1,23 +1,23 @@
 \documentclass{vadscript}
 
-{#- Render the gimi65536's scenario with version >= 0.0.2 #}
-{&- set processor = MacroProcessor(scenario.macrosignal, scenario.macrosplit) &}
+{#- Render the gimi65536's scenario with version >= 0.0.3 #}
+{&- set processor = MacroProcessor(scenario.macrostart, scenario.macrostop, scenario.macrosplit) &}
 {&- macro dialogue_macro_printer(macroblock) &}
 {#- #}{& if macroblock.get_type() == 'none' &}
 {#- #}{& elif macroblock.get_type() == 'plaintext' &}
-{#-       #}{| macroblock.get_param() |}
+{#-       #}{| macroblock.get_param()|etex |}
 {#- #}{& elif macroblock.get_type() == 'separate' &}{# Support recursive call #}
 {#-       #}{& if macroblock.get_param()|count == 0 &}\ruleline{& else &}\begin{inrule}{& for m in macroblock.get_param()[0] &}{| dialogue_macro_printer(m) |}{& endfor &}\end{inrule}{& endif &}
 {#- #}{& elif macroblock.get_type() == 'center' &}{# Support recursive call #}
 {#-       #}\begin{incenter}{& for m in macroblock.get_param()[0] &}{| dialogue_macro_printer(m) |}{& endfor &}\end{incenter}
 {#- #}{& elif macroblock.get_type() == 'ruby' &}
-{#-       #}\ruby[g]{{| macroblock.get_param()[0] |}}{{| macroblock.get_param()[1] |}}
+{#-       #}\ruby[g]{{| macroblock.get_param()[0]|etex |}}{{| macroblock.get_param()[1]|etex |}}
 {#- #}{& endif &}
 {&- endmacro &}
 
 \begin{document}
 
-\gentitle{{| scenario.other_info['index'] |}}{{| scenario.other_info['date'] |}}{{| scenario.title |}}
+\gentitle{{| scenario.other_info['index']|etex |}}{{| scenario.other_info['date']|etex |}}{{| scenario.title|etex |}}
 
 \begin{myfigure}[blanker]
 {& if scenario.other_info['image']|length == 0 &}
@@ -33,13 +33,13 @@
 {#  #}{&- if scenario.dialogue[handler]['speaker_list']|count == 0 &}
 {#        #}\begin{sentence}{}
 {#- #}{&- else &}
-{#        #}\begin{sentence}{{| abb_list|join('、') |}}{# [{| clist|join(',') |}] #} {# reject names not in characters #}
+{#        #}\begin{sentence}{{| abb_list|join('、')|etex |}}{# [{| clist|join(',')|etex |}] #} {# reject names not in characters #}
 {#- #}{&- endif &}
 {&- else &}
 {#  #}{&- if s|count == 1 and s[0].get_type == 'none' &}
 {#        #}\begin{sentence}{}
 {#- #}{&- else &}
-{#        #}\begin{sentence}{{| scenario.dialogue[handler]['speaker'] |}}{# [{| clist|join(',') |}] #}
+{#        #}\begin{sentence}{{| scenario.dialogue[handler]['speaker']|etex |}}{# [{| clist|join(',')|etex |}] #}
 {#- #}{&- endif &}
 {&- endif &}
 {&- endwith &}
@@ -53,7 +53,7 @@
 {&- endfor &}
 
 {& for name, info in scenario.character.items()|sort(attribute = '1.order') &}
-\addchara{{| name |}}{{| info['abbreviated'] |}}{{| info['gender'] |},{| info['cast'] |}}
+\addchara{{| name|etex |}}{{| info['abbreviated']|etex |}}{{| info['gender']|etex |},{| info['cast']|etex |}}
 {& endfor &}
 
 \writecast
