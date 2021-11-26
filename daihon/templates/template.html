@@ -105,6 +105,21 @@
 		.cast-head{
 			font-weight: bold;
 		}
+		.line-counter{
+			font-size: 0.3rem;
+			display: inline-block;
+			width: 1.5rem;
+			flex-shrink: 0;
+		}
+		.line-manager{
+			margin: 10px auto;
+			display: flex;
+			align-items: center;
+		}
+		.line-button{
+			flex-shrink: 0;
+			margin-right: 1rem;
+		}
 		/* Turn on to use vertical writing */
 		/*body{
 			writing-mode: vertical-rl;
@@ -164,6 +179,10 @@
 		</div>
 {%- endfor %}
 	</div>
+	<div class="line-manager">
+		<div class="line-button"><button onclick="switchLineNumber();">切換行號顯示</button></div>
+		<div class="line-info" id="line-info"></div>
+	</div>
 	<div class="cast">
 		<div class="cast-row">
 			<div class="cast-head"></div>
@@ -186,6 +205,9 @@
 	</div>
 	<script>
 		let state_table = new Map();
+		let linenumber_enable = false;
+		let linenumber_info = new Map();
+		let linenumber_counter = new Map();
 		function switchColor(cls, color) {
 			if(!state_table.has(cls)){
 				state_table.set(cls, false);
@@ -198,6 +220,7 @@
 				for (let i of document.getElementsByClassName('show-' + cls)) {
 					i.textContent = 'No';
 				}
+				updateLine(cls, -1);
 			}else{
 				state_table.set(cls, true);
 				for (let i of document.getElementsByClassName(cls)) {
@@ -206,7 +229,72 @@
 				for (let i of document.getElementsByClassName('show-' + cls)) {
 					i.textContent = 'Yes';
 				}
+				updateLine(cls, 1);
 			}
+		}
+		function switchLineNumber() {
+			if(!linenumber_enable){
+				linenumber_enable = true;
+				for(let dia of document.getElementsByClassName('dialogue')){
+					let number = 0;
+					for (let sen of dia.querySelectorAll(':scope > .sentence')){
+						if(sen.querySelectorAll(':scope > .speaker').length > 0){
+							let newnode = document.createElement('div');
+							newnode.classList.add('line-counter');
+							newnode.textContent = (++number);
+							sen.prepend(newnode);
+						}
+					}
+				}
+				state_table.forEach((value, cls) => {
+					if(value){
+						updateLine(cls, 1);
+					}
+				});
+			}else{
+				linenumber_enable = false;
+				for(let newnode of document.querySelectorAll('.line-counter')){
+					newnode.remove();
+				}
+				document.getElementById('line-info').textContent = "";
+				for(let key of linenumber_counter.keys()){
+					linenumber_counter.set(key, 0);
+				}
+			}
+		}
+		function updateLine(cls, offset) {
+			if(!linenumber_enable){
+				return;
+			}
+			if(!linenumber_info.has(cls)){
+				let list = [];
+				for(let speaker of document.querySelectorAll('.sentence > .speaker.' + cls)){
+					let parent = speaker.parentElement;
+					let linenumber_element = parent.querySelector('.line-counter');
+					if(linenumber_element != null){
+						list.push(parseInt(linenumber_element.textContent))
+					}
+				}
+				linenumber_info.set(cls, list);
+			}
+			let list = linenumber_info.get(cls);
+			for(let i of list){
+				if(!linenumber_counter.has(i)){
+					linenumber_counter.set(i, 0);
+				}
+				let count = linenumber_counter.get(i);
+				count += offset;
+				linenumber_counter.set(i, (count >= 0 ? count : 0));
+			}
+			let active = [];
+			linenumber_counter.forEach((count, line) => {
+				if(count > 0){
+					active.push(line);
+				}
+			});
+			active.sort((a, b) => a - b);
+			let lineinfo_element = document.getElementById('line-info');
+			lineinfo_element.textContent = active.join(', ');
 		}
 	</script>
 </body>
