@@ -2,7 +2,7 @@ from collections import namedtuple
 from copy import copy
 import tkinter as tk
 
-from .memento import Originator, Memento
+from .memento import Originator, Memento, NotRestorableError
 
 from ..scenario.base import ScenarioBase
 

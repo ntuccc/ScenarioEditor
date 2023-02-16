@@ -10,7 +10,7 @@
 	{%- elif macroblock.get_type() == 'center' -%}
 				<span class="center">{% for m in macroblock.get_param()[0] %}{{ dialogue_macro_printer(m) }}{% endfor %}</span>
 	{%- elif macroblock.get_type() == 'ruby' -%}
-				<ruby><rb>{{ macroblock.get_param()[0]|e }}</rb><rp>（</rp><rt>{{ macroblock.get_param()[1]|e }}</rt><rp>）</rp></ruby>
+				<ruby>{{ macroblock.get_param()[0]|e }}<rp>（</rp><rt>{{ macroblock.get_param()[1]|e }}</rt><rp>）</rp></ruby>
 	{%- endif -%}
 {%- endmacro %}
 <html lang="zh-Hant-TW">
